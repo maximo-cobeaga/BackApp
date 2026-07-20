@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block title %}Inicio - Backup Control Center{% endblock %}
+{% block content %}
+<h1>Fundación del sistema</h1>
+<p>Usá este panel para cargar la organización piloto, clientes, sedes, objetos protegidos y relaciones.</p>
+<ul>
+  <li><a href="{% url 'customer_create' %}">Crear cliente gestionado</a></li>
+  <li><a href="{% url 'site_create' %}">Crear sede o entorno</a></li>
+  <li><a href="{% url 'protected_object_create' %}">Registrar objeto protegido</a></li>
+  <li><a href="{% url 'object_relation_create' %}">Crear relación entre objetos</a></li>
+  <li><a href="{% url 'backup_configuration_summary' %}">Configurar backups</a></li>
+  <li><a href="{% url 'import_preview_create' %}">Importar Excel</a></li>
+  <li><a href="{% url 'daily_control_create' %}">Registrar control manual</a></li>
+</ul>
+{% endblock %}

@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% block title %}Sedes{% endblock %}
+{% block content %}
+<h1>Sedes y entornos</h1>
+<a class="button" href="{% url 'site_create' %}">Crear sede</a>
+<table>
+  <thead><tr><th>Cliente</th><th>Nombre</th><th>Tipo</th><th>Zona horaria</th></tr></thead>
+  <tbody>
+    {% for site in sites %}
+      <tr><td>{{ site.managed_customer.name }}</td><td>{{ site.name }}</td><td>{{ site.get_site_type_display }}</td><td>{{ site.timezone }}</td></tr>
+    {% empty %}
+      <tr><td colspan="4">No hay sedes cargadas.</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

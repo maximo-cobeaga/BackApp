@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% block title %}Tecnologías de backup{% endblock %}
+{% block content %}
+<h1>Tecnologías de backup</h1>
+<a class="button" href="{% url 'backup_technology_create' %}">Crear tecnología</a>
+<table>
+  <thead><tr><th>Nombre</th><th>Proveedor</th><th>Estado</th></tr></thead>
+  <tbody>
+    {% for technology in technologies %}
+      <tr><td>{{ technology.name }}</td><td>{{ technology.vendor }}</td><td>{{ technology.is_active|yesno:"Activa,Inactiva" }}</td></tr>
+    {% empty %}
+      <tr><td colspan="3">No hay tecnologías cargadas.</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

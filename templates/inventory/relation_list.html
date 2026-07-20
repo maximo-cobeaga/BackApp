@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% block title %}Relaciones entre objetos{% endblock %}
+{% block content %}
+<h1>Relaciones entre objetos</h1>
+<a class="button" href="{% url 'object_relation_create' %}">Crear relación</a>
+<table>
+  <thead><tr><th>Origen</th><th>Relación</th><th>Destino</th></tr></thead>
+  <tbody>
+    {% for relation in relations %}
+      <tr><td>{{ relation.source.name }}</td><td>{{ relation.get_relation_type_display }}</td><td>{{ relation.target.name }}</td></tr>
+    {% empty %}
+      <tr><td colspan="3">No hay relaciones cargadas.</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

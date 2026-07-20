@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+{% block title %}Importar Excel{% endblock %}
+{% block content %}
+<h1>Importar Excel</h1>
+<p>Mapeá columnas por nombre. El sistema no asume posiciones fijas.</p>
+<form method="post" enctype="multipart/form-data">
+  {% csrf_token %}
+  {{ form.as_p }}
+  <button type="submit">Previsualizar</button>
+</form>
+{% endblock %}

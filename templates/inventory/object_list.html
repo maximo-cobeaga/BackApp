@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% block title %}Objetos protegidos{% endblock %}
+{% block content %}
+<h1>Objetos protegidos</h1>
+<a class="button" href="{% url 'protected_object_create' %}">Registrar objeto</a>
+<table>
+  <thead><tr><th>Cliente</th><th>Sede</th><th>Nombre</th><th>Tipo</th><th>Referencia</th></tr></thead>
+  <tbody>
+    {% for object in objects %}
+      <tr><td>{{ object.managed_customer.name }}</td><td>{{ object.site.name }}</td><td>{{ object.name }}</td><td>{{ object.get_object_type_display }}</td><td>{{ object.external_reference }}</td></tr>
+    {% empty %}
+      <tr><td colspan="5">No hay objetos cargados.</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

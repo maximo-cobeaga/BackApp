@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block title %}Configuración de backups{% endblock %}
+{% block content %}
+<h1>Configuración de backups</h1>
+<p>Inventario inicial de tecnologías, tareas, objetivos, programación, destino y retención.</p>
+<ul>
+  <li>Tareas: {{ job_count }}</li>
+  <li>Objetivos: {{ target_count }}</li>
+  <li>Programaciones: {{ schedule_count }}</li>
+  <li>Destinos: {{ destination_count }}</li>
+  <li>Retenciones: {{ retention_count }}</li>
+</ul>
+<p>
+  <a class="button" href="{% url 'backup_technology_create' %}">Crear tecnología</a>
+  <a class="button" href="{% url 'backup_job_create' %}">Crear tarea</a>
+  <a class="button" href="{% url 'backup_target_create' %}">Agregar objetivo</a>
+</p>
+<p>
+  <a href="{% url 'backup_schedule_create' %}">Crear programación</a> |
+  <a href="{% url 'backup_destination_create' %}">Crear destino</a> |
+  <a href="{% url 'backup_retention_create' %}">Crear retención</a>
+</p>
+{% endblock %}

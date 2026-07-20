@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="es-AR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}Backup Control Center{% endblock %}</title>
+  <script src="https://unpkg.com/htmx.org@2.0.4" defer></script>
+  <style>
+    body { font-family: system-ui, sans-serif; margin: 0; color: #172033; }
+    header { background: #10213f; color: white; padding: 1rem 1.5rem; }
+    nav a, nav button { color: white; margin-right: 1rem; }
+    main { padding: 1.5rem; max-width: 1100px; }
+    table { border-collapse: collapse; width: 100%; margin-top: 1rem; }
+    th, td { border-bottom: 1px solid #d8dee9; padding: .6rem; text-align: left; }
+    form p { max-width: 38rem; }
+    input, select, textarea { width: 100%; max-width: 34rem; padding: .45rem; }
+    .button { display: inline-block; background: #1f5fbf; color: white; padding: .5rem .8rem; text-decoration: none; border-radius: 4px; }
+    .muted { color: #607086; }
+    .errorlist { color: #a40000; }
+  </style>
+</head>
+<body>
+  <header>
+    <strong>Backup Control Center</strong>
+    {% if user.is_authenticated %}
+      <span class="muted"> | Organización: {{ active_organization|default:"sin seleccionar" }}</span>
+      <nav aria-label="Navegación principal">
+        <a href="{% url 'dashboard' %}">Inicio</a>
+        <a href="{% url 'customer_list' %}">Clientes</a>
+        <a href="{% url 'site_list' %}">Sedes</a>
+        <a href="{% url 'protected_object_list' %}">Objetos</a>
+        <a href="{% url 'object_relation_list' %}">Relaciones</a>
+        <a href="{% url 'backup_configuration_summary' %}">Backups</a>
+        <a href="{% url 'import_batch_list' %}">Importaciones</a>
+        <a href="{% url 'daily_control_list' %}">Control diario</a>
+        <form action="{% url 'logout' %}" method="post" style="display:inline">
+          {% csrf_token %}
+          <button type="submit">Salir</button>
+        </form>
+      </nav>
+    {% endif %}
+  </header>
+  <main>
+    {% block content %}{% endblock %}
+  </main>
+</body>
+</html>

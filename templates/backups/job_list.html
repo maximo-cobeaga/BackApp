@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% block title %}Tareas de backup{% endblock %}
+{% block content %}
+<h1>Tareas de backup</h1>
+<a class="button" href="{% url 'backup_job_create' %}">Crear tarea</a>
+<table>
+  <thead><tr><th>Cliente</th><th>Sede</th><th>Tarea</th><th>Tecnología</th><th>Estado</th></tr></thead>
+  <tbody>
+    {% for job in jobs %}
+      <tr><td>{{ job.managed_customer.name }}</td><td>{{ job.site.name }}</td><td>{{ job.name }}</td><td>{{ job.technology.name }}</td><td>{{ job.get_status_display }}</td></tr>
+    {% empty %}
+      <tr><td colspan="5">No hay tareas cargadas.</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

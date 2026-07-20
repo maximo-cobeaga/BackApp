@@ -1,0 +1,17 @@
+# Local Pi runtime state
+.atl/
+
+# Python / Django
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.coverage
+htmlcov/
+runtime/data/*.sqlite3
+runtime/data/*.sqlite3-*
+runtime/staticfiles/
+runtime/attachments/
+runtime/exports/
+runtime/backups/
+.env

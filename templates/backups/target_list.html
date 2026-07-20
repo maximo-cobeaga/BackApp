@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% block title %}Objetivos de backup{% endblock %}
+{% block content %}
+<h1>Objetivos de backup</h1>
+<a class="button" href="{% url 'backup_target_create' %}">Agregar objetivo</a>
+<table>
+  <thead><tr><th>Tarea</th><th>Objeto protegido</th><th>Rol</th></tr></thead>
+  <tbody>
+    {% for target in targets %}
+      <tr><td>{{ target.backup_job.name }}</td><td>{{ target.protected_object.name }}</td><td>{{ target.get_role_display }}</td></tr>
+    {% empty %}
+      <tr><td colspan="3">No hay objetivos cargados.</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

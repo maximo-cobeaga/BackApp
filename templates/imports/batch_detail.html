@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% block title %}Previsualización de importación{% endblock %}
+{% block content %}
+<h1>Previsualización de importación</h1>
+<p><strong>Archivo:</strong> {{ batch.original_filename }} | <strong>Estado:</strong> {{ batch.get_status_display }}</p>
+{% if batch.status == "PREVIEW" %}
+<form method="post" action="{% url 'import_batch_confirm' batch.id %}" style="display:inline">
+  {% csrf_token %}
+  <button type="submit">Confirmar importación</button>
+</form>
+{% endif %}
+{% if batch.status == "IMPORTED" %}
+<form method="post" action="{% url 'import_batch_rollback' batch.id %}" style="display:inline">
+  {% csrf_token %}
+  <button type="submit">Marcar rollback</button>
+</form>
+{% endif %}
+<table>
+  <thead><tr><th>Fila</th><th>Estado</th><th>Cliente</th><th>Sede</th><th>Objeto</th><th>Tarea</th><th>Tecnología</th><th>Mensajes</th></tr></thead>
+  <tbody>
+    {% for row in rows %}
+      <tr>
+        <td>{{ row.row_number }}</td>
+        <td>{{ row.get_status_display }}</td>
+        <td>{{ row.normalized_data.customer }}</td>
+        <td>{{ row.normalized_data.site }}</td>
+        <td>{{ row.normalized_data.object_name }}</td>
+        <td>{{ row.normalized_data.job_name }}</td>
+        <td>{{ row.normalized_data.technology }}</td>
+        <td>{{ row.messages|join:", " }}</td>
+      </tr>
+    {% empty %}
+      <tr><td colspan="8">No hay filas para mostrar.</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

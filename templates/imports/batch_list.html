@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block title %}Importaciones{% endblock %}
+{% block content %}
+<h1>Importaciones</h1>
+<a class="button" href="{% url 'import_preview_create' %}">Importar Excel</a>
+<table>
+  <thead><tr><th>Archivo</th><th>Estado</th><th>Filas</th><th>Fecha</th></tr></thead>
+  <tbody>
+    {% for batch in batches %}
+      <tr>
+        <td><a href="{% url 'import_batch_detail' batch.id %}">{{ batch.original_filename }}</a></td>
+        <td>{{ batch.get_status_display }}</td>
+        <td>{{ batch.row_count }}</td>
+        <td>{{ batch.created_at }}</td>
+      </tr>
+    {% empty %}
+      <tr><td colspan="4">No hay importaciones cargadas.</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock %}
