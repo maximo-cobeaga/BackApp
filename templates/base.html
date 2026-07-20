@@ -32,6 +32,7 @@
         <a href="{% url 'object_relation_list' %}">Relaciones</a>
         <a href="{% url 'backup_configuration_summary' %}">Backups</a>
         <a href="{% url 'import_batch_list' %}">Importaciones</a>
+        <a href="{% url 'expected_execution_list' %}">Ejecuciones esperadas</a>
         <a href="{% url 'daily_control_list' %}">Control diario</a>
         <form action="{% url 'logout' %}" method="post" style="display:inline">
           {% csrf_token %}

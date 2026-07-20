@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+{% block title %}Generar ejecuciones esperadas{% endblock %}
+{% block content %}
+<h1>Generar ejecuciones esperadas</h1>
+<p>Se generan desde programaciones activas. La operación es idempotente por fecha y programación.</p>
+<form method="post">
+  {% csrf_token %}
+  {{ form.as_p }}
+  <button type="submit">Generar</button>
+</form>
+{% endblock %}

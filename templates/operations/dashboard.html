@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block title %}Dashboard - Backup Control Center{% endblock %}
+{% block content %}
+<h1>Dashboard operativo</h1>
+<form method="get">
+  <label for="date">Fecha</label>
+  <input id="date" type="date" name="date" value="{{ selected_date|date:'Y-m-d' }}">
+  <button type="submit">Ver</button>
+</form>
+<section aria-label="Resumen de ejecuciones esperadas">
+  <h2>Ejecuciones esperadas</h2>
+  <ul>
+    <li>Total esperadas: {{ metrics.expected }}</li>
+    <li>Esperando reporte: {{ metrics.waiting }}</li>
+    <li>Sin reporte: {{ metrics.no_report }}</li>
+  </ul>
+</section>
+<section aria-label="Resumen de control manual">
+  <h2>Control manual</h2>
+  <ul>
+    <li>Total manual: {{ metrics.manual_total }}</li>
+    <li>Correctos: {{ metrics.manual_success }}</li>
+    <li>Warnings: {{ metrics.manual_warning }}</li>
+    <li>Errores: {{ metrics.manual_error }}</li>
+  </ul>
+</section>
+<p>
+  <a class="button" href="{% url 'expected_execution_generate' %}">Generar esperadas</a>
+  <a class="button" href="{% url 'expected_execution_list' %}?date={{ selected_date|date:'Y-m-d' }}">Ver esperadas</a>
+  <a class="button" href="{% url 'daily_control_list' %}?date={{ selected_date|date:'Y-m-d' }}">Ver control diario</a>
+</p>
+{% endblock %}

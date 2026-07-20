@@ -19,8 +19,8 @@ background context. When documents conflict, follow this file for implementation
 order, scope, and stop conditions.
 
 ```text
-CURRENT_PHASE=3
-CURRENT_PHASE_NAME=Spreadsheet import and manual control
+CURRENT_PHASE=4
+CURRENT_PHASE_NAME=Expected executions and initial dashboard
 STOP_AFTER_CURRENT_PHASE=true
 ```
 
@@ -29,43 +29,40 @@ Celery, PostgreSQL, cloud deployment, or the complete roadmap yet.
 
 ## 2. Quick path for the current phase
 
-Extend the existing foundation with spreadsheet import and manual daily control:
+Extend the existing foundation with expected executions and an initial dashboard:
 
-1. Import batches for uploaded workbooks.
-2. Per-row import preview with raw and normalized data.
-3. Column mapping instead of fixed spreadsheet assumptions.
-4. Forward-fill support for merged customer cells.
-5. Confirmation that creates missing customers, sites, objects, technologies,
-   backup jobs, and job targets from preview rows.
-6. Safe rollback/deactivation metadata for imported batches.
-7. Manual daily-control entries for configured backup jobs.
-8. Tenant-scoped daily-control list and create views.
-9. Excel export for manual daily control.
-10. Tests for preview, confirmation, rollback metadata, export, and tenant
-    isolation.
+1. Generate `ExpectedExecution` records from active `BackupSchedule` records.
+2. Respect schedule frequency, configured weekdays, scheduled time, timezone,
+   report deadline time, and report deadline offset.
+3. Avoid duplicate expected executions for the same schedule and service date.
+4. Mark overdue waiting executions as `NO_REPORT` after the report deadline.
+5. Keep manual daily-control entries separate from expected executions.
+6. Add tenant-scoped expected-execution list and generate views.
+7. Add a tenant-scoped initial dashboard with expected, waiting, no-report, and
+   manual-result counts.
+8. Add tests for generation, deadlines, missing reports, idempotency, dashboard,
+   and tenant isolation.
 
-For phase 3, keep the existing `ADMIN` write path. `OPERATOR` and `VIEWER` still
-do not require a complete permission matrix.
+For phase 4, keep the existing `ADMIN` write path for generation actions.
+`OPERATOR` and `VIEWER` still do not require a complete permission matrix.
 
 The current phase is complete when an administrator can:
 
-1. Upload a workbook and map columns.
-2. Preview normalized rows before saving domain records.
-3. Confirm an import batch safely.
-4. Record manual daily backup results.
-5. Export the daily-control table to Excel.
-6. View only import and daily-control records belonging to the active
-   organization.
-7. Pass all tests, including tenant-isolation tests.
+1. Generate expected executions for a selected date.
+2. See the generated executions in a tenant-scoped list.
+3. Mark overdue executions as `NO_REPORT`.
+4. See initial dashboard counts for the selected date.
+5. Confirm duplicate generation is idempotent.
+6. Pass all tests, including tenant-isolation tests.
 
 Stop after satisfying those criteria.
 
 Report the result using the format in section 30.
 
-Sections 15, 16, 17, 18, 19, 20, 21, 22, and 28 are product context unless the
+Sections 15, 16, 17, 19, 20, 21, 22, and 28 are product context unless the
 current phase explicitly requires them. Do not create email ingestion, parsers,
-expected executions, rule engines, tickets, external-backup automation, workers,
-or SaaS infrastructure during phase 3.
+matching, rule engines, tickets, external-backup automation, workers, or SaaS
+infrastructure during phase 4.
 
 ## 3. Operating rules for the coding agent
 

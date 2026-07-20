@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block title %}Ejecuciones esperadas{% endblock %}
+{% block content %}
+<h1>Ejecuciones esperadas</h1>
+<form method="get">
+  <label for="date">Fecha</label>
+  <input id="date" type="date" name="date" value="{{ selected_date|date:'Y-m-d' }}">
+  <button type="submit">Filtrar</button>
+</form>
+<p>
+  <a class="button" href="{% url 'expected_execution_generate' %}">Generar esperadas</a>
+</p>
+<form method="post" action="{% url 'expected_execution_mark_missing' %}">
+  {% csrf_token %}
+  <button type="submit">Marcar vencidas sin reporte</button>
+</form>
+<table>
+  <thead><tr><th>Fecha</th><th>Cliente</th><th>Sede</th><th>Tarea</th><th>Programada</th><th>Deadline</th><th>Estado</th></tr></thead>
+  <tbody>
+    {% for execution in executions %}
+      <tr>
+        <td>{{ execution.service_date }}</td>
+        <td>{{ execution.backup_job.managed_customer.name }}</td>
+        <td>{{ execution.backup_job.site.name }}</td>
+        <td>{{ execution.backup_job.name }}</td>
+        <td>{{ execution.scheduled_start_at }}</td>
+        <td>{{ execution.report_deadline_at }}</td>
+        <td>{{ execution.get_status_display }}</td>
+      </tr>
+    {% empty %}
+      <tr><td colspan="7">No hay ejecuciones esperadas para la fecha.</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock %}
