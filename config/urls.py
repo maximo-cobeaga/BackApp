@@ -14,4 +14,6 @@ urlpatterns = [
     path("backups/", include("apps.backups.urls")),
     path("imports/", include("apps.imports.urls")),
     path("operations/", include("apps.operations.urls")),
+    path("ingestion/", include("apps.ingestion.urls")),
+    path("parsers/", include("apps.parsers.urls")),
 ]

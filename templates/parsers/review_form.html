@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% block title %}Revisar resultado{% endblock %}
+{% block content %}
+<h1>Revisar resultado parseado</h1>
+<p><strong>Asunto:</strong> {{ item.message.subject }}</p>
+<p><strong>Estado técnico:</strong> {{ item.get_parser_status_display }}</p>
+<p><strong>Resumen:</strong> {{ item.summary }}</p>
+<form method="post">
+  {% csrf_token %}
+  {{ form.as_p }}
+  <button type="submit">Marcar revisado</button>
+</form>
+{% endblock %}

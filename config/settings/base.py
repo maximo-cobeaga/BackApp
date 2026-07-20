@@ -26,6 +26,8 @@ INSTALLED_APPS = [
     "apps.backups",
     "apps.imports",
     "apps.operations",
+    "apps.ingestion",
+    "apps.parsers",
 ]
 
 MIDDLEWARE = [

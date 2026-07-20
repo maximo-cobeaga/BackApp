@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+{% block title %}Crear conector de correo{% endblock %}
+{% block content %}
+<h1>Crear conector de correo</h1>
+<p>No pegues secretos en este formulario. Guardá solo nombres de variables de entorno o referencias externas.</p>
+<form method="post">
+  {% csrf_token %}
+  {{ form.as_p }}
+  <button type="submit">Guardar</button>
+</form>
+{% endblock %}

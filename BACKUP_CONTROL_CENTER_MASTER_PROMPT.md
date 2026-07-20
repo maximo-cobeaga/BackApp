@@ -19,8 +19,8 @@ background context. When documents conflict, follow this file for implementation
 order, scope, and stop conditions.
 
 ```text
-CURRENT_PHASE=4
-CURRENT_PHASE_NAME=Expected executions and initial dashboard
+CURRENT_PHASE=6
+CURRENT_PHASE_NAME=Parser registry and manual review queue
 STOP_AFTER_CURRENT_PHASE=true
 ```
 
@@ -29,40 +29,39 @@ Celery, PostgreSQL, cloud deployment, or the complete roadmap yet.
 
 ## 2. Quick path for the current phase
 
-Extend the existing foundation with expected executions and an initial dashboard:
+Extend the mailbox foundation with a parser registry and manual review queue:
 
-1. Generate `ExpectedExecution` records from active `BackupSchedule` records.
-2. Respect schedule frequency, configured weekdays, scheduled time, timezone,
-   report deadline time, and report deadline offset.
-3. Avoid duplicate expected executions for the same schedule and service date.
-4. Mark overdue waiting executions as `NO_REPORT` after the report deadline.
-5. Keep manual daily-control entries separate from expected executions.
-6. Add tenant-scoped expected-execution list and generate views.
-7. Add a tenant-scoped initial dashboard with expected, waiting, no-report, and
-   manual-result counts.
-8. Add tests for generation, deadlines, missing reports, idempotency, dashboard,
+1. Add normalized `ParsedReportItem` records linked to inbound messages.
+2. Add parser and review status dimensions without creating ticket decisions.
+3. Add a parser registry with a safe generic parser.
+4. Do not implement provider-specific backup parsers until anonymized samples are
+   available.
+5. The generic parser must produce `UNKNOWN` with low confidence and require
+   manual review.
+6. Process unparsed inbound messages idempotently.
+7. Add a tenant-scoped manual review queue for parsed items that need review.
+8. Add tests for parser idempotency, safe unknown classification, review queue,
    and tenant isolation.
 
-For phase 4, keep the existing `ADMIN` write path for generation actions.
-`OPERATOR` and `VIEWER` still do not require a complete permission matrix.
+For phase 6, keep parsing operator-triggered. Do not add matching, rule engines,
+ticket automation, external-backup automation, workers, or SaaS infrastructure.
 
 The current phase is complete when an administrator can:
 
-1. Generate expected executions for a selected date.
-2. See the generated executions in a tenant-scoped list.
-3. Mark overdue executions as `NO_REPORT`.
-4. See initial dashboard counts for the selected date.
-5. Confirm duplicate generation is idempotent.
+1. Process stored inbound messages through the parser registry.
+2. See unknown or low-confidence parsed items in a manual review queue.
+3. Mark a parsed item as reviewed without changing technical result semantics.
+4. Confirm duplicate parsing does not create duplicate parsed items.
+5. Confirm no generic parser result is marked as successful.
 6. Pass all tests, including tenant-isolation tests.
 
 Stop after satisfying those criteria.
 
 Report the result using the format in section 30.
 
-Sections 15, 16, 17, 19, 20, 21, 22, and 28 are product context unless the
-current phase explicitly requires them. Do not create email ingestion, parsers,
-matching, rule engines, tickets, external-backup automation, workers, or SaaS
-infrastructure during phase 4.
+Sections 17, 19, 20, 21, 22, and 28 are product context unless the current phase
+explicitly requires them. Do not create matching, rule engines, tickets,
+external-backup automation, workers, or SaaS infrastructure during phase 6.
 
 ## 3. Operating rules for the coding agent
 

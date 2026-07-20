@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block title %}Conectores de correo{% endblock %}
+{% block content %}
+<h1>Conectores de correo</h1>
+<p>Los conectores son de solo lectura. Microsoft 365 usa Microsoft Graph.</p>
+<p>
+  <a class="button" href="{% url 'mail_connector_create' %}">Crear conector</a>
+  <a class="button" href="{% url 'inbound_message_list' %}">Ver mensajes</a>
+</p>
+<table>
+  <thead><tr><th>Nombre</th><th>Proveedor</th><th>Casilla</th><th>Carpeta</th><th>Última sync</th><th>Acción</th></tr></thead>
+  <tbody>
+    {% for connector in connectors %}
+      <tr>
+        <td>{{ connector.name }}</td>
+        <td>{{ connector.get_provider_type_display }}</td>
+        <td>{{ connector.mailbox_address }}</td>
+        <td>{{ connector.folder }}</td>
+        <td>{{ connector.last_synced_at|default:"Nunca" }}</td>
+        <td>
+          <form method="post" action="{% url 'mail_connector_sync' connector.id %}">
+            {% csrf_token %}
+            <button type="submit">Sincronizar</button>
+          </form>
+        </td>
+      </tr>
+    {% empty %}
+      <tr><td colspan="6">No hay conectores cargados.</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

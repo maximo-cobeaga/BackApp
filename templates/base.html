@@ -34,6 +34,8 @@
         <a href="{% url 'import_batch_list' %}">Importaciones</a>
         <a href="{% url 'expected_execution_list' %}">Ejecuciones esperadas</a>
         <a href="{% url 'daily_control_list' %}">Control diario</a>
+        <a href="{% url 'mail_connector_list' %}">Correos</a>
+        <a href="{% url 'parser_review_queue' %}">Revisión</a>
         <form action="{% url 'logout' %}" method="post" style="display:inline">
           {% csrf_token %}
           <button type="submit">Salir</button>
