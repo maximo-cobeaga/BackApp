@@ -32,6 +32,9 @@ def store_fetched_message(*, connector: MailConnector, message: FetchedMessage) 
             "recipients": message.recipients,
             "received_at": message.received_at,
             "body_preview": message.body_preview,
+            "text_body": message.text_body,
+            "html_body": message.html_body,
+            "html_as_text": message.html_as_text,
             "raw_headers": message.raw_headers,
             "provider_payload": message.provider_payload,
             "content_hash": message.content_hash,
@@ -50,6 +53,7 @@ def store_fetched_message(*, connector: MailConnector, message: FetchedMessage) 
             size_bytes=attachment.size_bytes,
             sha256=attachment.sha256,
             storage_path=attachment.storage_path,
+            extracted_text=attachment.extracted_text,
         )
         for attachment in message.attachments
         if attachment.sha256

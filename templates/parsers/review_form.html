@@ -1,13 +1,87 @@
 {% extends "base.html" %}
 {% block title %}Revisar resultado{% endblock %}
+{% block page_title %}Revisar resultado{% endblock %}
 {% block content %}
-<h1>Revisar resultado parseado</h1>
-<p><strong>Asunto:</strong> {{ item.message.subject }}</p>
-<p><strong>Estado técnico:</strong> {{ item.get_parser_status_display }}</p>
-<p><strong>Resumen:</strong> {{ item.summary }}</p>
-<form method="post">
-  {% csrf_token %}
-  {{ form.as_p }}
-  <button type="submit">Marcar revisado</button>
-</form>
+<div class="page-header">
+  <div>
+    <p class="page-eyebrow">Matching manual</p>
+    <h1>Revisar resultado parseado</h1>
+    <p class="page-description">
+      Asociá la evidencia recibida con una ejecución esperada y registrá el resultado
+      operativo real.
+    </p>
+  </div>
+  <a class="button secondary" href="{% url 'parser_review_queue' %}">Volver a revisión</a>
+</div>
+
+<div class="dashboard-split">
+  <section>
+    <h2>Evidencia del correo</h2>
+    <ul class="summary-list">
+      <li>
+        <span>Asunto</span>
+        <strong>{{ item.message.subject|default:"Sin asunto" }}</strong>
+      </li>
+      <li>
+        <span>Estado técnico</span>
+        <span class="status-badge status-review">{{ item.get_parser_status_display }}</span>
+      </li>
+      <li>
+        <span>Proveedor</span>
+        <span class="badge">{{ item.metrics.provider|default:"No identificado" }}</span>
+      </li>
+      <li>
+        <span>Parser</span>
+        <strong class="td-mono">{{ item.parser_name }} v{{ item.parser_version }}</strong>
+      </li>
+      <li>
+        <span>Confianza</span>
+        <strong class="td-mono">{{ item.confidence }}</strong>
+      </li>
+    </ul>
+    <div class="empty-state">
+      <strong>Resumen extraído</strong>
+      <p>{{ item.summary }}</p>
+    </div>
+    <div class="empty-state">
+      <strong>Reglas aplicadas</strong>
+      {% if item.metrics.rule_ids %}
+        <p>{{ item.metrics.rule_ids|join:", " }}</p>
+      {% else %}
+        <p>Sin reglas aplicadas.</p>
+      {% endif %}
+    </div>
+  </section>
+
+  <section>
+    <h2>Decisión operativa</h2>
+    <p>El resultado queda trazado como ejecución real y el item sale de revisión.</p>
+    {% if matching_candidates %}
+      <div class="empty-state">
+        <strong>Sugerencias de matching</strong>
+        {% for candidate in matching_candidates %}
+          <p>
+            {{ candidate.expected_execution.backup_job.name }} ·
+            {{ candidate.expected_execution.service_date }} ·
+            {{ candidate.confidence|floatformat:2 }} confianza ·
+            {{ candidate.reasons|join:", " }}
+          </p>
+        {% endfor %}
+      </div>
+    {% else %}
+      <div class="empty-state">
+        <strong>Sin sugerencias automáticas</strong>
+        <p>Elegí manualmente una ejecución esperada o marcá el item revisado.</p>
+      </div>
+    {% endif %}
+    <form method="post">
+      {% csrf_token %}
+      {{ form.as_p }}
+      <div class="actions">
+        <button type="submit">Confirmar asociación</button>
+        <a class="button secondary" href="{% url 'parser_review_queue' %}">Cancelar</a>
+      </div>
+    </form>
+  </section>
+</div>
 {% endblock %}

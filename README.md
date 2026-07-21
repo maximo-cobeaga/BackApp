@@ -18,16 +18,20 @@ provider-specific backup reports without anonymized samples.
 - Expected execution generation from active schedules.
 - Read-only mailbox connector foundation.
 - Microsoft 365 Outlook connector through Microsoft Graph.
-- Parser registry with a safe generic parser.
-- Manual review queue for unknown parsed report items.
+- Full message body storage for safer report classification.
+- Parser registry with conservative static mail classification rules.
+- Provider/status/rule/evidence extraction for common backup report emails.
+- Manual review queue for unknown or low-confidence parsed report items.
+- Manual matching from parsed report items to real backup executions.
+- Assisted matching suggestions in manual review.
 
 ## Not implemented yet
 
-- Provider-specific backup parsers such as Veeam, Iperius, Azure Backup, or
-  Nakivo.
-- Matching parsed reports to backup jobs.
+- Provider-specific backup parsers validated with anonymized real samples.
+- Fully automatic matching parsed reports to backup jobs.
 - Rule engine for consecutive errors.
 - ManageEngine ticket creation.
+- Automatic attachment text extraction for binary reports.
 - Background workers or scheduled polling.
 - PostgreSQL, Redis, SaaS infrastructure, or billing.
 
@@ -113,11 +117,12 @@ the mailbox access as narrow as your tenant policy allows.
 11. Trigger mailbox sync.
 12. Open inbound messages.
 13. Run parser processing.
-14. Confirm unknown reports appear in the manual review queue.
-15. Mark an item reviewed.
+14. Confirm parsed items include provider, rule IDs, evidence, and review reasons.
+15. Associate an item with an expected execution and select the real result.
+16. Confirm the item appears as a real backup execution.
 
-Until real anonymized backup report samples are available, parsed results should
-remain `UNKNOWN` and require human review.
+Until real anonymized backup report samples are available, static classifications
+are proposals for operator confirmation, not automatic approval.
 
 ## Spreadsheet import test path
 

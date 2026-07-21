@@ -55,20 +55,23 @@ The database must store only these variable names, not their values.
 
 1. Open **Revisión**.
 2. Click **Procesar mensajes sin parser**.
-3. Confirm parsed items appear as **Desconocido** with confidence `0.0`.
-4. Open one item.
-5. Add a review note.
-6. Mark it reviewed.
-7. Confirm the technical parser status remains `UNKNOWN`.
+3. Confirm parsed items show provider, status, rule IDs, and evidence when a
+   static rule matches.
+4. Confirm unknown or low-confidence formats remain in manual review.
+5. Open one item.
+6. Associate it with an expected execution or mark it reviewed.
+7. Confirm the technical parser status is not changed by the manual decision.
 
 ## Expected behavior
 
 - The connector is read-only.
 - Secrets are not saved in the database.
 - Messages are idempotent by connector and provider message ID.
+- Full text or HTML body content is available for classification.
 - Attachments are not executed.
-- Generic parser output is never marked successful.
-- Unknown formats go to manual review.
+- Static classifications include evidence and rule IDs.
+- Unknown or low-confidence formats go to manual review.
+- A manual decision does not rewrite the technical parser status.
 
 ## Troubleshooting
 
@@ -80,8 +83,8 @@ The database must store only these variable names, not their values.
   access policy.
 - **Duplicate messages appear**: verify Microsoft Graph message IDs are stable for
   the selected mailbox/folder.
-- **Parser shows unknown**: this is expected until provider-specific parsers are
-  built from samples.
+- **Parser shows unknown**: the format did not match a conservative static rule.
+  It may need provider-specific validation from anonymized samples.
 
 ## Collecting parser samples later
 

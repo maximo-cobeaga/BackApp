@@ -14,6 +14,7 @@ urlpatterns = [
         views.expected_execution_mark_missing,
         name="expected_execution_mark_missing",
     ),
+    path("backup-executions/", views.backup_execution_list, name="backup_execution_list"),
     path("daily-control/", views.daily_control_list, name="daily_control_list"),
     path("daily-control/new/", views.daily_control_create, name="daily_control_create"),
     path("daily-control/export/", views.daily_control_export, name="daily_control_export"),

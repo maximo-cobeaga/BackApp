@@ -1,0 +1,92 @@
+{% extends "base.html" %}
+{% block title %}Ejecuciones reales{% endblock %}
+{% block page_title %}Ejecuciones reales{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div>
+    <p class="page-eyebrow">Resultado operativo</p>
+    <h1>Ejecuciones reales</h1>
+    <p class="page-description">
+      Resultados confirmados desde revisión manual o, más adelante, desde matching
+      automático validado.
+    </p>
+  </div>
+  <a class="button secondary" href="{% url 'parser_review_queue' %}">Ir a revisión manual</a>
+</div>
+
+<form class="filter-card" method="get">
+  <div class="field">
+    <label for="date">Fecha de servicio</label>
+    <input id="date" type="date" name="date" value="{{ selected_date|date:'Y-m-d' }}">
+  </div>
+  <button type="submit">Filtrar</button>
+</form>
+
+<div class="table-card">
+  <div class="table-card-header">
+    <div>
+      <h2 class="table-title">Resultados confirmados</h2>
+      <p class="table-subtitle">Ejecución esperada, evidencia y operador que asoció.</p>
+    </div>
+  </div>
+  <div class="table-scroll">
+    <table>
+      <thead>
+        <tr>
+          <th>Fecha</th>
+          <th>Cliente</th>
+          <th>Sede</th>
+          <th>Tarea</th>
+          <th>Resultado</th>
+          <th>Matching</th>
+          <th>Evidencia</th>
+          <th>Operador</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for execution in executions %}
+          <tr{% if execution.result == "ERROR" %} class="state-row-critical"{% elif execution.result == "NO_REPORT" %} class="state-row-missing"{% endif %}>
+            <td class="td-mono">{{ execution.service_date }}</td>
+            <td>{{ execution.backup_job.managed_customer.name }}</td>
+            <td>{{ execution.backup_job.site.name }}</td>
+            <td class="td-strong">{{ execution.backup_job.name }}</td>
+            <td>
+              {% if execution.result == "SUCCESS" %}
+                <span class="status-badge status-success">{{ execution.get_result_display }}</span>
+              {% elif execution.result == "WARNING" %}
+                <span class="status-badge status-warning">{{ execution.get_result_display }}</span>
+              {% elif execution.result == "ERROR" %}
+                <span class="status-badge status-error">{{ execution.get_result_display }}</span>
+              {% elif execution.result == "NO_REPORT" %}
+                <span class="status-badge status-missing">{{ execution.get_result_display }}</span>
+              {% elif execution.result == "UNKNOWN" %}
+                <span class="status-badge status-review">{{ execution.get_result_display }}</span>
+              {% else %}
+                <span class="status-badge status-pending">{{ execution.get_result_display }}</span>
+              {% endif %}
+            </td>
+            <td><span class="status-badge status-review">{{ execution.get_match_status_display }}</span></td>
+            <td class="td-muted">
+              {% if execution.parsed_item %}
+                {{ execution.parsed_item.message.subject|default:"Correo sin asunto" }}
+              {% else %}
+                —
+              {% endif %}
+            </td>
+            <td>{{ execution.matched_by|default:"—" }}</td>
+          </tr>
+        {% empty %}
+          <tr>
+            <td colspan="8">
+              <div class="empty-state">
+                <strong>No hay ejecuciones reales para la fecha.</strong>
+                <p>Asociá reportes desde revisión manual para crear resultados reales.</p>
+              </div>
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

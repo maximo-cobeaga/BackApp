@@ -3,9 +3,11 @@ from __future__ import annotations
 
 import json
 import os
+import re
 import urllib.parse
 import urllib.request
 from datetime import datetime
+from html.parser import HTMLParser
 from typing import Any
 
 from django.utils.dateparse import parse_datetime
@@ -21,6 +23,19 @@ GRAPH_ROOT = "https://graph.microsoft.com/v1.0"
 TOKEN_ROOT = "https://login.microsoftonline.com"
 
 
+class _TextExtractor(HTMLParser):
+    def __init__(self):
+        super().__init__()
+        self.parts: list[str] = []
+
+    def handle_data(self, data: str):
+        if data.strip():
+            self.parts.append(data.strip())
+
+    def text(self) -> str:
+        return re.sub(r"\s+", " ", " ".join(self.parts)).strip()
+
+
 class MicrosoftGraphMailboxProvider:
     """Read-only Microsoft 365 Outlook provider using Microsoft Graph."""
 
@@ -34,7 +49,7 @@ class MicrosoftGraphMailboxProvider:
                 "$orderby": "receivedDateTime desc",
                 "$select": (
                     "id,internetMessageId,conversationId,subject,from,toRecipients,"
-                    "receivedDateTime,bodyPreview,hasAttachments"
+                    "receivedDateTime,bodyPreview,body,hasAttachments"
                 ),
             }
         )
@@ -104,6 +119,7 @@ class MicrosoftGraphMailboxProvider:
             if (recipient.get("emailAddress") or {}).get("address")
         ]
         received_at = self._parse_graph_datetime(item.get("receivedDateTime"))
+        text_body, html_body, html_as_text = self._body_fields(item.get("body"))
         return FetchedMessage(
             external_message_id=item.get("id", ""),
             internet_message_id=item.get("internetMessageId", ""),
@@ -113,9 +129,26 @@ class MicrosoftGraphMailboxProvider:
             recipients=recipients,
             received_at=received_at,
             body_preview=item.get("bodyPreview", ""),
+            text_body=text_body,
+            html_body=html_body,
+            html_as_text=html_as_text,
             provider_payload={"graph": item},
             has_attachments=bool(item.get("hasAttachments", False)),
         )
+
+    def _body_fields(self, body: dict[str, Any] | None) -> tuple[str, str, str]:
+        if not isinstance(body, dict):
+            return "", "", ""
+        content = str(body.get("content") or "")
+        content_type = str(body.get("contentType") or "").casefold()
+        if content_type == "html":
+            return "", content, self._html_to_text(content)
+        return content, "", ""
+
+    def _html_to_text(self, html: str) -> str:
+        parser = _TextExtractor()
+        parser.feed(html)
+        return parser.text()
 
     def _parse_graph_datetime(self, value: str | None) -> datetime | None:
         if not value:

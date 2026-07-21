@@ -27,6 +27,7 @@ class FetchedAttachment:
     size_bytes: int = 0
     sha256: str = ""
     storage_path: str = ""
+    extracted_text: str = ""
 
 
 @dataclass(frozen=True)
@@ -39,6 +40,9 @@ class FetchedMessage:
     recipients: list[str] = field(default_factory=list)
     received_at: datetime | None = None
     body_preview: str = ""
+    text_body: str = ""
+    html_body: str = ""
+    html_as_text: str = ""
     raw_headers: dict[str, str] = field(default_factory=dict)
     provider_payload: dict = field(default_factory=dict)
     content_hash: str = ""

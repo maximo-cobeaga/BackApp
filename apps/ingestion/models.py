@@ -73,6 +73,9 @@ class InboundMessage(OrganizationOwnedModel):
     recipients = models.JSONField(default=list, blank=True)
     received_at = models.DateTimeField(null=True, blank=True)
     body_preview = models.TextField(blank=True)
+    text_body = models.TextField(blank=True)
+    html_body = models.TextField(blank=True)
+    html_as_text = models.TextField(blank=True)
     raw_headers = models.JSONField(default=dict, blank=True)
     provider_payload = models.JSONField(default=dict, blank=True)
     content_hash = models.CharField(max_length=64, blank=True)
@@ -111,6 +114,7 @@ class MessageAttachment(OrganizationOwnedModel):
     size_bytes = models.PositiveIntegerField(default=0)
     sha256 = models.CharField(max_length=64)
     storage_path = models.CharField(max_length=512, blank=True)
+    extracted_text = models.TextField(blank=True)
 
     class Meta:
         ordering = ["filename"]

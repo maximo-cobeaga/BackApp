@@ -7,7 +7,7 @@ from django.shortcuts import redirect, render
 from django.utils.dateparse import parse_date
 
 from apps.operations.forms import DailyControlEntryForm, ExpectedExecutionGenerateForm
-from apps.operations.models import DailyControlEntry, ExpectedExecution
+from apps.operations.models import BackupExecution, DailyControlEntry, ExpectedExecution
 from apps.operations.services import (
     build_daily_control_workbook,
     dashboard_metrics,
@@ -72,6 +72,24 @@ def expected_execution_mark_missing(request):
     if request.method == "POST":
         mark_missing_reports(organization=context.organization)
     return redirect("expected_execution_list")
+
+
+@login_required
+def backup_execution_list(request):
+    context = get_tenant_context(request)
+    selected_date = parse_date(request.GET.get("date", "")) or date.today()
+    executions = BackupExecution.objects.select_related(
+        "backup_job__managed_customer",
+        "backup_job__site",
+        "expected_execution",
+        "parsed_item__message",
+        "matched_by",
+    ).filter(organization=context.organization, service_date=selected_date)
+    return render(
+        request,
+        "operations/backup_execution_list.html",
+        {"executions": executions, "selected_date": selected_date},
+    )
 
 
 @login_required

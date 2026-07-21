@@ -12,6 +12,8 @@ class ParsedReportItem(OrganizationOwnedModel):
         WARNING = "WARNING", "Warning"
         FAILED = "FAILED", "Fallido"
         PARTIAL = "PARTIAL", "Parcial"
+        RUNNING = "RUNNING", "En curso"
+        CANCELED = "CANCELED", "Cancelado"
         UNKNOWN = "UNKNOWN", "Desconocido"
 
     class ReviewStatus(models.TextChoices):

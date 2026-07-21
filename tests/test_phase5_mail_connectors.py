@@ -106,6 +106,40 @@ class PhaseFiveMailConnectorTest(TestCase):
         }
         assert "super-secret-value" not in str(connector.config)
 
+    def test_sync_mailbox_stores_full_body_and_attachment_text(self):
+        fetched = FetchedMessage(
+            external_message_id="graph-body",
+            subject="Backup body",
+            sender="reports@example.com",
+            body_preview="Preview only",
+            text_body="Status: Success\nErrors: 0",
+            html_body="<p>Status: <strong>Success</strong></p>",
+            html_as_text="Status: Success",
+            attachments=[
+                FetchedAttachment(
+                    filename="report.txt",
+                    content_type="text/plain",
+                    size_bytes=120,
+                    sha256="b" * 64,
+                    extracted_text="Warnings: 0\nErrors: 0",
+                )
+            ],
+            has_attachments=True,
+        )
+
+        sync_mailbox(connector=self.connector, provider=FakeMailProvider([fetched]))
+
+        message = InboundMessage.objects.get(
+            organization=self.org,
+            connector=self.connector,
+            external_message_id="graph-body",
+        )
+        attachment = message.attachments.get()
+        assert message.text_body == "Status: Success\nErrors: 0"
+        assert message.html_body == "<p>Status: <strong>Success</strong></p>"
+        assert message.html_as_text == "Status: Success"
+        assert attachment.extracted_text == "Warnings: 0\nErrors: 0"
+
     def test_sync_mailbox_stores_messages_idempotently_with_attachment_metadata(self):
         fetched = FetchedMessage(
             external_message_id="graph-1",
@@ -183,6 +217,10 @@ class PhaseFiveMailConnectorTest(TestCase):
             ],
             "receivedDateTime": "2026-07-20T08:00:00Z",
             "bodyPreview": "Done",
+            "body": {
+                "contentType": "html",
+                "content": "<p>Status: <strong>Success</strong></p>",
+            },
             "hasAttachments": False,
         }
         message = provider._message_from_graph(item)
@@ -190,3 +228,5 @@ class PhaseFiveMailConnectorTest(TestCase):
         assert message.sender == "sender@example.com"
         assert message.recipients == ["backups@example.com"]
         assert message.received_at == datetime(2026, 7, 20, 8, 0, tzinfo=UTC)
+        assert message.html_body == "<p>Status: <strong>Success</strong></p>"
+        assert message.html_as_text == "Status: Success"

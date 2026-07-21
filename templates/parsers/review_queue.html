@@ -31,6 +31,7 @@
           <th>Recibido</th>
           <th>Conector</th>
           <th>Asunto</th>
+          <th>Proveedor</th>
           <th>Parser</th>
           <th>Estado</th>
           <th>Confianza</th>
@@ -44,6 +45,7 @@
             <td class="td-mono">{{ item.message.received_at|default:"—" }}</td>
             <td>{{ item.message.connector.name }}</td>
             <td class="td-strong">{{ item.message.subject|default:"Sin asunto" }}</td>
+            <td><span class="badge">{{ item.metrics.provider|default:"No identificado" }}</span></td>
             <td class="td-mono">{{ item.parser_name }} v{{ item.parser_version }}</td>
             <td><span class="status-badge status-review">{{ item.get_parser_status_display }}</span></td>
             <td class="td-mono">{{ item.confidence }}</td>
@@ -52,7 +54,7 @@
           </tr>
         {% empty %}
           <tr>
-            <td colspan="8">
+            <td colspan="9">
               <div class="empty-state">
                 <strong>No hay reportes pendientes de revisión.</strong>
                 <p>Los resultados recibidos fueron procesados o todavía no hay mensajes.</p>
