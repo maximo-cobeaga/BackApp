@@ -1,10 +1,21 @@
 {% extends "base.html" %}
 {% block title %}Ingresar - Backup Control Center{% endblock %}
 {% block content %}
-<h1>Ingresar</h1>
-<form method="post">
-  {% csrf_token %}
-  {{ form.as_p }}
-  <button type="submit">Ingresar</button>
-</form>
+<div class="auth-card">
+  <div class="brand brand-on-light" aria-label="Backup Control Center">
+    <span class="brand-mark" aria-hidden="true"><span class="brand-dot"></span></span>
+    <span>
+      <span class="brand-title">Backup Control Center</span>
+      <span class="brand-subtitle">Cada respaldo, bajo control</span>
+    </span>
+  </div>
+  <p class="page-eyebrow">Acceso interno</p>
+  <h1>Ingresar</h1>
+  <p>Entrá al piloto local para controlar configuraciones, correos y revisiones.</p>
+  <form method="post">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button type="submit">Ingresar</button>
+  </form>
+</div>
 {% endblock %}

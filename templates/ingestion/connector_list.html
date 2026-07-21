@@ -1,32 +1,70 @@
 {% extends "base.html" %}
 {% block title %}Conectores de correo{% endblock %}
+{% block page_title %}Conectores de correo{% endblock %}
 {% block content %}
-<h1>Conectores de correo</h1>
-<p>Los conectores son de solo lectura. Microsoft 365 usa Microsoft Graph.</p>
-<p>
-  <a class="button" href="{% url 'mail_connector_create' %}">Crear conector</a>
-  <a class="button" href="{% url 'inbound_message_list' %}">Ver mensajes</a>
-</p>
-<table>
-  <thead><tr><th>Nombre</th><th>Proveedor</th><th>Casilla</th><th>Carpeta</th><th>Última sync</th><th>Acción</th></tr></thead>
-  <tbody>
-    {% for connector in connectors %}
-      <tr>
-        <td>{{ connector.name }}</td>
-        <td>{{ connector.get_provider_type_display }}</td>
-        <td>{{ connector.mailbox_address }}</td>
-        <td>{{ connector.folder }}</td>
-        <td>{{ connector.last_synced_at|default:"Nunca" }}</td>
-        <td>
-          <form method="post" action="{% url 'mail_connector_sync' connector.id %}">
-            {% csrf_token %}
-            <button type="submit">Sincronizar</button>
-          </form>
-        </td>
-      </tr>
-    {% empty %}
-      <tr><td colspan="6">No hay conectores cargados.</td></tr>
-    {% endfor %}
-  </tbody>
-</table>
+<div class="page-header">
+  <div>
+    <p class="page-eyebrow">Ingesta de solo lectura</p>
+    <h1>Conectores de correo</h1>
+    <p class="page-description">
+      Configurá casillas sin permisos de escritura. Microsoft 365 usa Microsoft
+      Graph; IMAP y Gmail quedan preparados para fases futuras.
+    </p>
+  </div>
+  <div class="actions">
+    <a class="button" href="{% url 'mail_connector_create' %}">Crear conector</a>
+    <a class="button secondary" href="{% url 'inbound_message_list' %}">Ver mensajes</a>
+  </div>
+</div>
+
+<div class="table-card">
+  <div class="table-card-header">
+    <div>
+      <h2 class="table-title">Casillas monitoreadas</h2>
+      <p class="table-subtitle">Las credenciales se leen desde variables de entorno.</p>
+    </div>
+  </div>
+  <div class="table-scroll">
+    <table>
+      <thead>
+        <tr>
+          <th>Nombre</th>
+          <th>Proveedor</th>
+          <th>Casilla</th>
+          <th>Carpeta</th>
+          <th>Última sync</th>
+          <th>Modo</th>
+          <th>Acción</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for connector in connectors %}
+          <tr>
+            <td class="td-strong">{{ connector.name }}</td>
+            <td><span class="badge">{{ connector.get_provider_type_display }}</span></td>
+            <td>{{ connector.mailbox_address }}</td>
+            <td>{{ connector.folder }}</td>
+            <td class="td-mono">{{ connector.last_synced_at|default:"Nunca" }}</td>
+            <td><span class="status-badge status-review">Solo lectura</span></td>
+            <td>
+              <form method="post" action="{% url 'mail_connector_sync' connector.id %}">
+                {% csrf_token %}
+                <button class="secondary compact" type="submit">Sincronizar</button>
+              </form>
+            </td>
+          </tr>
+        {% empty %}
+          <tr>
+            <td colspan="7">
+              <div class="empty-state">
+                <strong>No hay conectores cargados.</strong>
+                <p>Creá un conector Microsoft 365 para iniciar la ingesta read-only.</p>
+              </div>
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
 {% endblock %}

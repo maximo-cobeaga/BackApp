@@ -1,35 +1,90 @@
 {% extends "base.html" %}
 {% block title %}Ejecuciones esperadas{% endblock %}
+{% block page_title %}Ejecuciones esperadas{% endblock %}
 {% block content %}
-<h1>Ejecuciones esperadas</h1>
-<form method="get">
-  <label for="date">Fecha</label>
-  <input id="date" type="date" name="date" value="{{ selected_date|date:'Y-m-d' }}">
+<div class="page-header">
+  <div>
+    <p class="page-eyebrow">Carga operativa</p>
+    <h1>Ejecuciones esperadas</h1>
+    <p class="page-description">
+      Reportes que deberían recibirse para la fecha seleccionada, con vencimientos y
+      estado visible.
+    </p>
+  </div>
+  <div class="actions">
+    <a class="button" href="{% url 'expected_execution_generate' %}">Generar esperadas</a>
+    <form method="post" action="{% url 'expected_execution_mark_missing' %}">
+      {% csrf_token %}
+      <button class="secondary" type="submit">Marcar vencidas sin reporte</button>
+    </form>
+  </div>
+</div>
+
+<form class="filter-card" method="get">
+  <div class="field">
+    <label for="date">Fecha de servicio</label>
+    <input id="date" type="date" name="date" value="{{ selected_date|date:'Y-m-d' }}">
+  </div>
   <button type="submit">Filtrar</button>
 </form>
-<p>
-  <a class="button" href="{% url 'expected_execution_generate' %}">Generar esperadas</a>
-</p>
-<form method="post" action="{% url 'expected_execution_mark_missing' %}">
-  {% csrf_token %}
-  <button type="submit">Marcar vencidas sin reporte</button>
-</form>
-<table>
-  <thead><tr><th>Fecha</th><th>Cliente</th><th>Sede</th><th>Tarea</th><th>Programada</th><th>Deadline</th><th>Estado</th></tr></thead>
-  <tbody>
-    {% for execution in executions %}
-      <tr>
-        <td>{{ execution.service_date }}</td>
-        <td>{{ execution.backup_job.managed_customer.name }}</td>
-        <td>{{ execution.backup_job.site.name }}</td>
-        <td>{{ execution.backup_job.name }}</td>
-        <td>{{ execution.scheduled_start_at }}</td>
-        <td>{{ execution.report_deadline_at }}</td>
-        <td>{{ execution.get_status_display }}</td>
-      </tr>
-    {% empty %}
-      <tr><td colspan="7">No hay ejecuciones esperadas para la fecha.</td></tr>
-    {% endfor %}
-  </tbody>
-</table>
+
+<div class="table-card">
+  <div class="table-card-header">
+    <div>
+      <h2 class="table-title">Plan del día</h2>
+      <p class="table-subtitle">Una fila por programación esperada.</p>
+    </div>
+  </div>
+  <div class="table-scroll">
+    <table>
+      <thead>
+        <tr>
+          <th>Fecha</th>
+          <th>Cliente</th>
+          <th>Sede</th>
+          <th>Tarea</th>
+          <th>Programada</th>
+          <th>Deadline</th>
+          <th>Estado</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for execution in executions %}
+          <tr{% if execution.status == "ERROR" %} class="state-row-critical"{% elif execution.status == "NO_REPORT" %} class="state-row-missing"{% endif %}>
+            <td class="td-mono">{{ execution.service_date }}</td>
+            <td>{{ execution.backup_job.managed_customer.name }}</td>
+            <td>{{ execution.backup_job.site.name }}</td>
+            <td class="td-strong">{{ execution.backup_job.name }}</td>
+            <td class="td-mono">{{ execution.scheduled_start_at }}</td>
+            <td class="td-mono">{{ execution.report_deadline_at }}</td>
+            <td>
+              {% if execution.status == "SUCCESS" %}
+                <span class="status-badge status-success">{{ execution.get_status_display }}</span>
+              {% elif execution.status == "WARNING" %}
+                <span class="status-badge status-warning">{{ execution.get_status_display }}</span>
+              {% elif execution.status == "ERROR" %}
+                <span class="status-badge status-error">{{ execution.get_status_display }}</span>
+              {% elif execution.status == "NO_REPORT" %}
+                <span class="status-badge status-missing">{{ execution.get_status_display }}</span>
+              {% elif execution.status == "WAITING_REPORT" %}
+                <span class="status-badge status-pending">{{ execution.get_status_display }}</span>
+              {% else %}
+                <span class="status-badge status-review">{{ execution.get_status_display }}</span>
+              {% endif %}
+            </td>
+          </tr>
+        {% empty %}
+          <tr>
+            <td colspan="7">
+              <div class="empty-state">
+                <strong>No hay ejecuciones esperadas para la fecha.</strong>
+                <p>Generá la carga del día cuando las programaciones estén cargadas.</p>
+              </div>
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
 {% endblock %}

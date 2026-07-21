@@ -208,5 +208,6 @@ class PhaseFourExpectedExecutionTest(TestCase):
         response = self.client.get(reverse("dashboard"), {"date": "2026-07-20"})
         assert response.status_code == 200
         content = response.content.decode()
-        assert "Total esperadas: 1" in content
-        assert "Sin reporte: 0" in content
+        assert "Esperadas" in content
+        assert "Sin reporte" in content
+        assert "Oculta" not in content

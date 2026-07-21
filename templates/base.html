@@ -1,50 +1,109 @@
+{% load static %}
 <!doctype html>
 <html lang="es-AR">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>{% block title %}Backup Control Center{% endblock %}</title>
+  <link rel="stylesheet" href="{% static 'css/app.css' %}">
   <script src="https://unpkg.com/htmx.org@2.0.4" defer></script>
-  <style>
-    body { font-family: system-ui, sans-serif; margin: 0; color: #172033; }
-    header { background: #10213f; color: white; padding: 1rem 1.5rem; }
-    nav a, nav button { color: white; margin-right: 1rem; }
-    main { padding: 1.5rem; max-width: 1100px; }
-    table { border-collapse: collapse; width: 100%; margin-top: 1rem; }
-    th, td { border-bottom: 1px solid #d8dee9; padding: .6rem; text-align: left; }
-    form p { max-width: 38rem; }
-    input, select, textarea { width: 100%; max-width: 34rem; padding: .45rem; }
-    .button { display: inline-block; background: #1f5fbf; color: white; padding: .5rem .8rem; text-decoration: none; border-radius: 4px; }
-    .muted { color: #607086; }
-    .errorlist { color: #a40000; }
-  </style>
 </head>
 <body>
-  <header>
-    <strong>Backup Control Center</strong>
-    {% if user.is_authenticated %}
-      <span class="muted"> | Organización: {{ active_organization|default:"sin seleccionar" }}</span>
-      <nav aria-label="Navegación principal">
-        <a href="{% url 'dashboard' %}">Inicio</a>
-        <a href="{% url 'customer_list' %}">Clientes</a>
-        <a href="{% url 'site_list' %}">Sedes</a>
-        <a href="{% url 'protected_object_list' %}">Objetos</a>
-        <a href="{% url 'object_relation_list' %}">Relaciones</a>
-        <a href="{% url 'backup_configuration_summary' %}">Backups</a>
-        <a href="{% url 'import_batch_list' %}">Importaciones</a>
-        <a href="{% url 'expected_execution_list' %}">Ejecuciones esperadas</a>
-        <a href="{% url 'daily_control_list' %}">Control diario</a>
-        <a href="{% url 'mail_connector_list' %}">Correos</a>
-        <a href="{% url 'parser_review_queue' %}">Revisión</a>
-        <form action="{% url 'logout' %}" method="post" style="display:inline">
+  {% if user.is_authenticated %}
+    <div class="app-shell">
+      <aside class="sidebar" aria-label="Navegación principal">
+        <div class="brand" aria-label="Backup Control Center">
+          <span class="brand-mark" aria-hidden="true"><span class="brand-dot"></span></span>
+          <span>
+            <span class="brand-title">Backup Control</span>
+            <span class="brand-subtitle">Cada respaldo, bajo control</span>
+          </span>
+        </div>
+
+        <div class="org-pill">
+          <span class="org-label">Organización</span>
+          <span class="org-name">{{ active_organization|default:"Sin seleccionar" }}</span>
+        </div>
+
+        <nav class="nav-section">
+          <span class="nav-group-label">Operación</span>
+          <a href="{% url 'dashboard' %}"{% if request.resolver_match.url_name == 'dashboard' %} aria-current="page"{% endif %}>
+            <span class="nav-icon" aria-hidden="true">⌁</span>Dashboard
+          </a>
+          <a href="{% url 'expected_execution_list' %}"{% if request.resolver_match.url_name == 'expected_execution_list' %} aria-current="page"{% endif %}>
+            <span class="nav-icon" aria-hidden="true">◷</span>Ejecuciones esperadas
+          </a>
+          <a href="{% url 'daily_control_list' %}"{% if request.resolver_match.url_name == 'daily_control_list' %} aria-current="page"{% endif %}>
+            <span class="nav-icon" aria-hidden="true">✓</span>Control diario
+          </a>
+          <a href="{% url 'parser_review_queue' %}"{% if request.resolver_match.url_name == 'parser_review_queue' %} aria-current="page"{% endif %}>
+            <span class="nav-icon" aria-hidden="true">◌</span>Revisión manual
+          </a>
+
+          <span class="nav-group-label">Configuración</span>
+          <a href="{% url 'backup_configuration_summary' %}">
+            <span class="nav-icon" aria-hidden="true">▤</span>Backups
+          </a>
+          <a href="{% url 'mail_connector_list' %}"{% if request.resolver_match.url_name == 'mail_connector_list' %} aria-current="page"{% endif %}>
+            <span class="nav-icon" aria-hidden="true">✉</span>Correos
+          </a>
+          <a href="{% url 'import_batch_list' %}">
+            <span class="nav-icon" aria-hidden="true">⇧</span>Importaciones
+          </a>
+
+          <span class="nav-group-label">Inventario</span>
+          <a href="{% url 'customer_list' %}">
+            <span class="nav-icon" aria-hidden="true">◎</span>Clientes
+          </a>
+          <a href="{% url 'site_list' %}">
+            <span class="nav-icon" aria-hidden="true">⌂</span>Sedes
+          </a>
+          <a href="{% url 'protected_object_list' %}">
+            <span class="nav-icon" aria-hidden="true">◫</span>Objetos protegidos
+          </a>
+          <a href="{% url 'object_relation_list' %}">
+            <span class="nav-icon" aria-hidden="true">⟷</span>Relaciones
+          </a>
+        </nav>
+
+        <form class="nav-logout" action="{% url 'logout' %}" method="post">
           {% csrf_token %}
-          <button type="submit">Salir</button>
+          <button type="submit"><span class="nav-icon" aria-hidden="true">↳</span>Salir</button>
         </form>
-      </nav>
-    {% endif %}
-  </header>
-  <main>
-    {% block content %}{% endblock %}
-  </main>
+      </aside>
+
+      <div class="workspace">
+        <header class="topbar">
+          <div>
+            <div class="topbar-kicker">Piloto local</div>
+            <div class="topbar-title">{% block page_title %}Backup Control Center{% endblock %}</div>
+          </div>
+          <div class="topbar-actions">
+            <div class="user-chip">{{ user.get_username }}</div>
+          </div>
+        </header>
+
+        <main class="content">
+  {% else %}
+    <main class="auth-shell">
+  {% endif %}
+
+      {% if messages %}
+        <div class="message-list">
+          {% for message in messages %}
+            <div class="message {{ message.tags }}">{{ message }}</div>
+          {% endfor %}
+        </div>
+      {% endif %}
+
+      {% block content %}{% endblock %}
+
+  {% if user.is_authenticated %}
+        </main>
+      </div>
+    </div>
+  {% else %}
+    </main>
+  {% endif %}
 </body>
 </html>

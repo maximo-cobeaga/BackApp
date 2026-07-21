@@ -1,33 +1,87 @@
 {% extends "base.html" %}
 {% block title %}Dashboard - Backup Control Center{% endblock %}
+{% block page_title %}Dashboard operativo{% endblock %}
 {% block content %}
-<h1>Dashboard operativo</h1>
-<form method="get">
-  <label for="date">Fecha</label>
-  <input id="date" type="date" name="date" value="{{ selected_date|date:'Y-m-d' }}">
-  <button type="submit">Ver</button>
-</form>
-<section aria-label="Resumen de ejecuciones esperadas">
-  <h2>Ejecuciones esperadas</h2>
-  <ul>
-    <li>Total esperadas: {{ metrics.expected }}</li>
-    <li>Esperando reporte: {{ metrics.waiting }}</li>
-    <li>Sin reporte: {{ metrics.no_report }}</li>
-  </ul>
-</section>
-<section aria-label="Resumen de control manual">
-  <h2>Control manual</h2>
-  <ul>
-    <li>Total manual: {{ metrics.manual_total }}</li>
-    <li>Correctos: {{ metrics.manual_success }}</li>
-    <li>Warnings: {{ metrics.manual_warning }}</li>
-    <li>Errores: {{ metrics.manual_error }}</li>
-  </ul>
-</section>
-<p>
-  <a class="button" href="{% url 'expected_execution_generate' %}">Generar esperadas</a>
-  <a class="button" href="{% url 'expected_execution_list' %}?date={{ selected_date|date:'Y-m-d' }}">Ver esperadas</a>
-  <a class="button" href="{% url 'daily_control_list' %}?date={{ selected_date|date:'Y-m-d' }}">Ver control diario</a>
-  <a class="button" href="{% url 'mail_connector_list' %}">Configurar correos</a>
-</p>
+<div class="page-header">
+  <div>
+    <p class="page-eyebrow">Operación diaria</p>
+    <h1>Dashboard operativo</h1>
+    <p class="page-description">
+      Resumen sereno de lo esperado, lo pendiente y lo revisado para la fecha
+      seleccionada.
+    </p>
+  </div>
+  <form class="filter-card" method="get">
+    <div class="field">
+      <label for="date">Fecha de servicio</label>
+      <input id="date" type="date" name="date" value="{{ selected_date|date:'Y-m-d' }}">
+    </div>
+    <button type="submit">Actualizar</button>
+  </form>
+</div>
+
+<div class="metric-grid" aria-label="Resumen del día">
+  <article class="metric-card review">
+    <div class="metric-label">Esperadas</div>
+    <div class="metric-value">{{ metrics.expected }}</div>
+    <p class="metric-hint">Ejecuciones generadas para la fecha.</p>
+  </article>
+  <article class="metric-card pending">
+    <div class="metric-label">Esperando</div>
+    <div class="metric-value">{{ metrics.waiting }}</div>
+    <p class="metric-hint">Reportes todavía pendientes.</p>
+  </article>
+  <article class="metric-card missing">
+    <div class="metric-label">Sin reporte</div>
+    <div class="metric-value">{{ metrics.no_report }}</div>
+    <p class="metric-hint">Requieren revisión operativa.</p>
+  </article>
+  <article class="metric-card success">
+    <div class="metric-label">Manual</div>
+    <div class="metric-value">{{ metrics.manual_total }}</div>
+    <p class="metric-hint">Resultados registrados por operador.</p>
+  </article>
+</div>
+
+<div class="dashboard-split">
+  <section>
+    <div class="table-card-header">
+      <div>
+        <h2 class="table-title">Pendientes de acción</h2>
+        <p class="table-subtitle">Priorizá lo que puede bloquear el control diario.</p>
+      </div>
+    </div>
+    <ul class="summary-list">
+      <li>
+        <span><span class="status-badge status-missing">Sin reporte</span></span>
+        <strong>{{ metrics.no_report }}</strong>
+      </li>
+      <li>
+        <span><span class="status-badge status-pending">Pendiente</span></span>
+        <strong>{{ metrics.waiting }}</strong>
+      </li>
+      <li>
+        <span><span class="status-badge status-error">Error manual</span></span>
+        <strong>{{ metrics.manual_error }}</strong>
+      </li>
+      <li>
+        <span><span class="status-badge status-warning">Advertencia manual</span></span>
+        <strong>{{ metrics.manual_warning }}</strong>
+      </li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>Acciones rápidas</h2>
+    <p>
+      Generá la carga esperada, revisá vencidas y continuá hacia el control diario.
+    </p>
+    <div class="actions">
+      <a class="button" href="{% url 'expected_execution_generate' %}">Generar esperadas</a>
+      <a class="button secondary" href="{% url 'expected_execution_list' %}?date={{ selected_date|date:'Y-m-d' }}">Ver esperadas</a>
+      <a class="button secondary" href="{% url 'daily_control_list' %}?date={{ selected_date|date:'Y-m-d' }}">Control diario</a>
+      <a class="button secondary" href="{% url 'mail_connector_list' %}">Correos</a>
+    </div>
+  </section>
+</div>
 {% endblock %}

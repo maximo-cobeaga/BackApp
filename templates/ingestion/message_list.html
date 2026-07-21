@@ -1,22 +1,79 @@
 {% extends "base.html" %}
 {% block title %}Mensajes recibidos{% endblock %}
+{% block page_title %}Mensajes recibidos{% endblock %}
 {% block content %}
-<h1>Mensajes recibidos</h1>
-<table>
-  <thead><tr><th>Recibido</th><th>Conector</th><th>Remitente</th><th>Asunto</th><th>Adjuntos</th><th>Parser</th></tr></thead>
-  <tbody>
-    {% for message in inbound_messages %}
-      <tr>
-        <td>{{ message.received_at|default:"" }}</td>
-        <td>{{ message.connector.name }}</td>
-        <td>{{ message.sender }}</td>
-        <td>{{ message.subject }}</td>
-        <td>{{ message.has_attachments|yesno:"Sí,No" }}</td>
-        <td>{{ message.parser_status }}</td>
-      </tr>
-    {% empty %}
-      <tr><td colspan="6">No hay mensajes almacenados.</td></tr>
-    {% endfor %}
-  </tbody>
-</table>
+<div class="page-header">
+  <div>
+    <p class="page-eyebrow">Evidencia recibida</p>
+    <h1>Mensajes recibidos</h1>
+    <p class="page-description">
+      Correos almacenados de forma idempotente. Los adjuntos se registran como
+      metadata y no se ejecutan.
+    </p>
+  </div>
+  <div class="actions">
+    <a class="button secondary" href="{% url 'mail_connector_list' %}">Volver a conectores</a>
+    <a class="button" href="{% url 'parser_review_queue' %}">Ir a revisión</a>
+  </div>
+</div>
+
+<div class="table-card">
+  <div class="table-card-header">
+    <div>
+      <h2 class="table-title">Bandeja sincronizada</h2>
+      <p class="table-subtitle">Fuente trazable para parser y revisión manual.</p>
+    </div>
+  </div>
+  <div class="table-scroll">
+    <table>
+      <thead>
+        <tr>
+          <th>Recibido</th>
+          <th>Conector</th>
+          <th>Remitente</th>
+          <th>Asunto</th>
+          <th>Adjuntos</th>
+          <th>Parser</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for message in inbound_messages %}
+          <tr>
+            <td class="td-mono">{{ message.received_at|default:"—" }}</td>
+            <td>{{ message.connector.name }}</td>
+            <td>{{ message.sender|default:"—" }}</td>
+            <td class="td-strong">{{ message.subject|default:"Sin asunto" }}</td>
+            <td>
+              {% if message.has_attachments %}
+                <span class="status-badge status-review">Sí</span>
+              {% else %}
+                <span class="status-badge status-pending">No</span>
+              {% endif %}
+            </td>
+            <td>
+              {% if message.parser_status == "UNPROCESSED" %}
+                <span class="status-badge status-pending">Pendiente</span>
+              {% elif message.parser_status == "NEEDS_REVIEW" %}
+                <span class="status-badge status-review">Revisión manual</span>
+              {% elif message.parser_status == "REVIEWED" %}
+                <span class="status-badge status-success">Revisado</span>
+              {% else %}
+                <span class="status-badge status-review">{{ message.parser_status }}</span>
+              {% endif %}
+            </td>
+          </tr>
+        {% empty %}
+          <tr>
+            <td colspan="6">
+              <div class="empty-state">
+                <strong>No hay mensajes almacenados.</strong>
+                <p>Sincronizá un conector para cargar evidencia de reportes.</p>
+              </div>
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
 {% endblock %}
