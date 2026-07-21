@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block title %}Issues legacy{% endblock %}
+{% block page_title %}Issues legacy{% endblock %}
+{% block content %}
+<h1>Issues legacy</h1>
+<p>Primeros 200 issues detectados durante la importación histórica.</p>
+<table>
+  <thead>
+    <tr>
+      <th>Fila</th>
+      <th>Fecha</th>
+      <th>Código</th>
+      <th>Severidad</th>
+      <th>Detalle</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for issue in issues %}
+      <tr>
+        <td>{{ issue.source_row }}</td>
+        <td>{{ issue.source_date|default:"—" }}</td>
+        <td>{{ issue.issue_code }}</td>
+        <td>{{ issue.severity }}</td>
+        <td>{{ issue.details }}</td>
+      </tr>
+    {% empty %}
+      <tr><td colspan="5">No hay issues legacy.</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

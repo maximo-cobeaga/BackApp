@@ -2,7 +2,10 @@
 {% block title %}Importaciones{% endblock %}
 {% block content %}
 <h1>Importaciones</h1>
-<a class="button" href="{% url 'import_preview_create' %}">Importar Excel</a>
+<nav class="action-row" aria-label="Acciones de importación">
+  <a class="button" href="{% url 'import_preview_create' %}">Importar Excel</a>
+  <a class="button secondary" href="{% url 'legacy_import_summary' %}">Ver histórico importado</a>
+</nav>
 <table>
   <thead><tr><th>Archivo</th><th>Estado</th><th>Filas</th><th>Fecha</th></tr></thead>
   <tbody>

@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% block title %}Registros diarios legacy{% endblock %}
+{% block page_title %}Registros diarios legacy{% endblock %}
+{% block content %}
+<h1>Registros diarios legacy</h1>
+<p>Primeros 200 registros diarios importados. Los valores crudos se conservan para auditoría.</p>
+<table>
+  <thead>
+    <tr>
+      <th>Fecha</th>
+      <th>Fila</th>
+      <th>Cliente</th>
+      <th>Backup</th>
+      <th>Estado crudo</th>
+      <th>Estado normalizado</th>
+      <th>Ticket</th>
+      <th>Observación</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for record in records %}
+      <tr>
+        <td>{{ record.source_date }}</td>
+        <td>{{ record.source_row }}</td>
+        <td>{{ record.backup_configuration.legacy_customer_name }}</td>
+        <td>{{ record.backup_configuration.legacy_backup_name }}</td>
+        <td>{{ record.raw_status }}</td>
+        <td>{{ record.normalized_status }}</td>
+        <td>{{ record.raw_ticket }}</td>
+        <td>{{ record.raw_observation|truncatechars:120 }}</td>
+      </tr>
+    {% empty %}
+      <tr><td colspan="8">No hay registros diarios legacy.</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% block title %}Configuraciones legacy{% endblock %}
+{% block page_title %}Configuraciones legacy{% endblock %}
+{% block content %}
+<h1>Configuraciones legacy</h1>
+<p>Primeras 200 configuraciones importadas desde el CSV histórico.</p>
+<table>
+  <thead>
+    <tr>
+      <th>Fila</th>
+      <th>Cliente</th>
+      <th>Sede legacy</th>
+      <th>Origen</th>
+      <th>Backup</th>
+      <th>Método</th>
+      <th>Proveedor</th>
+      <th>Revisión</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for config in configurations %}
+      <tr>
+        <td>{{ config.source_row }}</td>
+        <td>{{ config.legacy_customer_name }}</td>
+        <td>{{ config.legacy_site_label }}</td>
+        <td>{{ config.source_asset_label }}</td>
+        <td><a href="{% url 'legacy_import_configuration_detail' config.id %}">{{ config.legacy_backup_name }}</a></td>
+        <td>{{ config.legacy_method }}</td>
+        <td>{{ config.provider|default:"Sin sugerencia" }}</td>
+        <td>{% if config.provider_requires_confirmation %}Requiere confirmación{% else %}—{% endif %}</td>
+      </tr>
+    {% empty %}
+      <tr><td colspan="8">No hay configuraciones legacy.</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

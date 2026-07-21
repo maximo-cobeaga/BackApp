@@ -12,6 +12,7 @@ from django.utils import timezone
 from openpyxl import Workbook
 
 from apps.backups.models import BackupJob, BackupSchedule
+from apps.imports.models import LegacyBackupConfiguration
 from apps.operations.models import BackupExecution, DailyControlEntry, ExpectedExecution
 from apps.parsers.models import ParsedReportItem
 from apps.tenancy.models import Organization
@@ -190,8 +191,11 @@ def backup_execution_candidates_for_parsed_item(
     parsed_item: ParsedReportItem,
     limit: int = 10,
 ) -> list[BackupExecutionCandidate]:
-    provider = str((parsed_item.metrics or {}).get("provider") or "").casefold()
-    job_hints = {hint.casefold() for hint in parsed_item.job_hints if hint}
+    provider = _normalized((parsed_item.metrics or {}).get("provider") or "")
+    job_hints = {_normalized(hint) for hint in parsed_item.job_hints if hint}
+    object_hints = {_normalized(hint) for hint in parsed_item.object_hints if hint}
+    customer_hints = {_normalized(hint) for hint in parsed_item.customer_hints if hint}
+    connector_folder = _normalized(parsed_item.message.connector.folder)
     received_at = parsed_item.message.received_at
     queryset = ExpectedExecution.objects.select_related(
         "backup_job__managed_customer",
@@ -211,25 +215,68 @@ def backup_execution_candidates_for_parsed_item(
         score = 0
         reasons: list[str] = []
         job = expected.backup_job
-        if job.name.casefold() in job_hints:
+        job_name = _normalized(job.name)
+        if job_name in job_hints:
             score += 60
             reasons.append("Coincide la tarea detectada")
         elif job_hints:
-            aliases = [
-                alias.strip().casefold()
-                for alias in job.matching_aliases.replace(";", "\n")
-                .replace(",", "\n")
-                .splitlines()
-                if alias.strip()
-            ]
-            if any(alias in job_hints for alias in aliases):
+            aliases = _job_aliases(job)
+            if _any_overlap(aliases, job_hints):
                 score += 55
                 reasons.append("Coincide un alias de la tarea")
 
-        technology_name = job.technology.name.casefold()
+        technology_name = _normalized(job.technology.name)
         if provider and (provider in technology_name or technology_name in provider):
             score += 20
             reasons.append("Coincide la tecnología detectada")
+
+        legacy_configs = list(
+            LegacyBackupConfiguration.objects.filter(
+                organization=parsed_item.organization,
+                reconciled_backup_job=job,
+            )
+        )
+        legacy_terms = {
+            _normalized(value)
+            for config in legacy_configs
+            for value in (config.legacy_backup_name, config.source_asset_label)
+            if value
+        }
+        if _any_overlap(legacy_terms, job_hints | object_hints):
+            score += 40
+            reasons.append("Coincide una configuración histórica reconciliada")
+
+        object_terms = set(legacy_terms)
+        object_terms.update(
+            _normalized(target.protected_object.name)
+            for target in job.targets.select_related("protected_object").all()
+        )
+        if object_hints and _any_overlap(object_terms, object_hints):
+            score += 25
+            reasons.append("Coincide el objeto protegido o activo histórico")
+
+        customer_terms = {_normalized(job.managed_customer.name)}
+        customer_terms.update(
+            _normalized(config.legacy_customer_name)
+            for config in legacy_configs
+            if config.legacy_customer_name
+        )
+        if customer_hints and _any_overlap(customer_terms, customer_hints):
+            score += 15
+            reasons.append("Coincide el cliente detectado")
+        elif connector_folder and _any_contains(customer_terms, {connector_folder}):
+            score += 10
+            reasons.append("La carpeta del conector coincide con el cliente")
+
+        site_terms = {_normalized(job.site.name)}
+        site_terms.update(
+            _normalized(config.legacy_site_label)
+            for config in legacy_configs
+            if config.legacy_site_label
+        )
+        if connector_folder and _any_contains(site_terms, {connector_folder}):
+            score += 10
+            reasons.append("La carpeta del conector coincide con la sede")
 
         if received_at is not None:
             deadline_margin = expected.report_deadline_at + timedelta(hours=12)
@@ -258,6 +305,30 @@ def backup_execution_candidates_for_parsed_item(
         ),
         reverse=True,
     )[:limit]
+
+
+def _normalized(value: object) -> str:
+    return str(value or "").strip().casefold()
+
+
+def _job_aliases(job: BackupJob) -> set[str]:
+    return {
+        alias.strip().casefold()
+        for alias in job.matching_aliases.replace(";", "\n").replace(",", "\n").splitlines()
+        if alias.strip()
+    }
+
+
+def _any_overlap(left: set[str], right: set[str]) -> bool:
+    return any(item and item in right for item in left)
+
+
+def _any_contains(left: set[str], right: set[str]) -> bool:
+    return any(
+        left_item and right_item and (left_item in right_item or right_item in left_item)
+        for left_item in left
+        for right_item in right
+    )
 
 
 @transaction.atomic

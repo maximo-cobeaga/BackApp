@@ -8,9 +8,9 @@ from django.db import transaction
 from django.utils import timezone
 from openpyxl import load_workbook
 
-from apps.backups.models import BackupJob, BackupJobTarget, BackupTechnology
+from apps.backups.models import BackupJob, BackupJobTarget, BackupSchedule, BackupTechnology
 from apps.customers.models import ManagedCustomer, Site
-from apps.imports.models import ImportBatch, ImportRow
+from apps.imports.models import ImportBatch, ImportRow, LegacyBackupConfiguration
 from apps.inventory.models import ProtectedObject
 from apps.tenancy.models import Organization
 
@@ -252,3 +252,317 @@ def mark_import_batch_rolled_back(*, batch: ImportBatch, user) -> ImportBatch:
     batch.notes = (batch.notes + "\n" if batch.notes else "") + "Rollback metadata recorded."
     batch.save()
     return batch
+
+
+@dataclass(frozen=True)
+class LegacyReconciliationResult:
+    site: Site
+    technology: BackupTechnology
+    protected_object: ProtectedObject
+    backup_job: BackupJob
+    target: BackupJobTarget
+    created: dict[str, bool]
+
+
+@transaction.atomic
+def reconcile_legacy_configuration(
+    *,
+    legacy_configuration,
+    site_name: str,
+    object_name: str,
+    technology_name: str,
+    job_name: str,
+    user=None,
+    note: str = "",
+) -> LegacyReconciliationResult:
+    site_name = _clean(site_name)
+    object_name = _clean(object_name)
+    technology_name = _clean(technology_name)
+    job_name = _clean(job_name)
+    if not all((site_name, object_name, technology_name, job_name)):
+        raise ValueError("Site, object, technology, and job names are required.")
+
+    organization = legacy_configuration.organization
+    customer = legacy_configuration.managed_customer
+    site, site_created = Site.objects.get_or_create(
+        organization=organization,
+        managed_customer=customer,
+        name=site_name,
+    )
+    technology, technology_created = BackupTechnology.objects.get_or_create(
+        organization=organization,
+        name=technology_name,
+    )
+    protected_object, object_created = ProtectedObject.objects.get_or_create(
+        organization=organization,
+        managed_customer=customer,
+        site=site,
+        name=object_name,
+        defaults={
+            "object_type": ProtectedObject.ObjectType.OTHER,
+            "notes": f"Reconciled from legacy CSV row {legacy_configuration.source_row}.",
+        },
+    )
+    job, job_created = BackupJob.objects.get_or_create(
+        organization=organization,
+        managed_customer=customer,
+        site=site,
+        technology=technology,
+        name=job_name,
+        defaults={
+            "matching_aliases": _legacy_aliases(legacy_configuration),
+            "notes": f"Reconciled from legacy CSV row {legacy_configuration.source_row}.",
+        },
+    )
+    target, target_created = BackupJobTarget.objects.get_or_create(
+        organization=organization,
+        backup_job=job,
+        protected_object=protected_object,
+    )
+
+    legacy_configuration.reconciled_site = site
+    legacy_configuration.reconciled_protected_object = protected_object
+    legacy_configuration.reconciled_backup_job = job
+    legacy_configuration.reconciled_by = user if getattr(user, "is_authenticated", False) else None
+    legacy_configuration.reconciled_at = timezone.now()
+    legacy_configuration.reconciliation_note = note
+    legacy_configuration.save(
+        update_fields=[
+            "reconciled_site",
+            "reconciled_protected_object",
+            "reconciled_backup_job",
+            "reconciled_by",
+            "reconciled_at",
+            "reconciliation_note",
+            "updated_at",
+        ]
+    )
+    return LegacyReconciliationResult(
+        site=site,
+        technology=technology,
+        protected_object=protected_object,
+        backup_job=job,
+        target=target,
+        created={
+            "site": site_created,
+            "technology": technology_created,
+            "protected_object": object_created,
+            "backup_job": job_created,
+            "target": target_created,
+        },
+    )
+
+
+def _legacy_aliases(legacy_configuration) -> str:
+    aliases = [
+        legacy_configuration.legacy_backup_name,
+        legacy_configuration.source_asset_label,
+    ]
+    return "\n".join(alias for alias in aliases if alias)
+
+
+@dataclass(frozen=True)
+class LegacyBootstrapResult:
+    processed: int
+    skipped_already_reconciled: int
+    sites_created: int
+    technologies_created: int
+    protected_objects_created: int
+    backup_jobs_created: int
+    targets_created: int
+
+    def to_dict(self, *, tenant: str, source_sha256: str) -> dict[str, Any]:
+        return {
+            "tenant": tenant,
+            "source_sha256": source_sha256,
+            "processed": self.processed,
+            "skipped_already_reconciled": self.skipped_already_reconciled,
+            "sites_created": self.sites_created,
+            "technologies_created": self.technologies_created,
+            "protected_objects_created": self.protected_objects_created,
+            "backup_jobs_created": self.backup_jobs_created,
+            "targets_created": self.targets_created,
+            "creates_schedules": False,
+            "creates_expected_executions": False,
+            "requires_review": True,
+        }
+
+
+@transaction.atomic
+def bootstrap_legacy_backups(*, organization: Organization, source_sha256: str) -> LegacyBootstrapResult:
+    configurations = LegacyBackupConfiguration.objects.select_for_update().filter(
+        organization=organization,
+        source_sha256=source_sha256,
+    )
+    counters = {
+        "processed": 0,
+        "skipped_already_reconciled": 0,
+        "sites_created": 0,
+        "technologies_created": 0,
+        "protected_objects_created": 0,
+        "backup_jobs_created": 0,
+        "targets_created": 0,
+    }
+    for configuration in configurations:
+        if configuration.reconciled_backup_job_id:
+            counters["skipped_already_reconciled"] += 1
+            continue
+        result = reconcile_legacy_configuration(
+            legacy_configuration=configuration,
+            site_name=_bootstrap_site_name(configuration),
+            object_name=_bootstrap_object_name(configuration),
+            technology_name=_bootstrap_technology_name(configuration),
+            job_name=_bootstrap_job_name(configuration),
+            note="Provisional bootstrap from legacy import; requires review.",
+        )
+        counters["processed"] += 1
+        for key, created in result.created.items():
+            counter_key = {
+                "site": "sites_created",
+                "technology": "technologies_created",
+                "protected_object": "protected_objects_created",
+                "backup_job": "backup_jobs_created",
+                "target": "targets_created",
+            }[key]
+            if created:
+                counters[counter_key] += 1
+    return LegacyBootstrapResult(**counters)
+
+
+def _bootstrap_site_name(configuration: LegacyBackupConfiguration) -> str:
+    site = _clean(configuration.legacy_site_label)
+    if site.casefold() in {"", "n/a", "na"}:
+        return "General"
+    return site
+
+
+def _bootstrap_object_name(configuration: LegacyBackupConfiguration) -> str:
+    source_asset = _clean(configuration.source_asset_label)
+    if source_asset:
+        return source_asset
+    backup_name = _clean(configuration.legacy_backup_name)
+    if backup_name:
+        return f"{backup_name} [legacy row {configuration.source_row}]"
+    return f"Legacy source row {configuration.source_row}"
+
+
+def _bootstrap_technology_name(configuration: LegacyBackupConfiguration) -> str:
+    method = _clean(configuration.legacy_method)
+    if method:
+        return method
+    provider = _clean(configuration.provider)
+    if provider:
+        return provider
+    return "Legacy method pending review"
+
+
+def _bootstrap_job_name(configuration: LegacyBackupConfiguration) -> str:
+    base = _clean(configuration.legacy_backup_name) or _clean(configuration.source_asset_label)
+    if not base:
+        base = "Legacy backup"
+    return f"{base} [legacy row {configuration.source_row}]"
+
+
+@dataclass(frozen=True)
+class LegacyScheduleBootstrapResult:
+    considered: int
+    created: int
+    updated_existing: int
+    skipped_existing: int
+
+    def to_dict(self, *, tenant: str) -> dict[str, Any]:
+        return {
+            "tenant": tenant,
+            "considered": self.considered,
+            "created": self.created,
+            "updated_existing": self.updated_existing,
+            "skipped_existing": self.skipped_existing,
+            "creates_expected_executions": False,
+            "requires_review": True,
+        }
+
+
+@transaction.atomic
+def bootstrap_legacy_schedules(
+    *,
+    organization: Organization,
+    frequency: str,
+    weekdays: str,
+    scheduled_time,
+    report_deadline_time,
+    report_deadline_offset_days: int,
+    mode: str,
+    timezone_name: str,
+    update_existing: bool = False,
+) -> LegacyScheduleBootstrapResult:
+    job_ids = list(
+        LegacyBackupConfiguration.objects.filter(
+            organization=organization,
+            reconciled_backup_job__isnull=False,
+        )
+        .values_list("reconciled_backup_job_id", flat=True)
+        .distinct()
+    )
+    jobs = BackupJob.objects.select_for_update().filter(
+        organization=organization,
+        id__in=job_ids,
+    )
+    considered = 0
+    created = 0
+    updated_existing = 0
+    skipped_existing = 0
+    for job in jobs:
+        considered += 1
+        existing_schedule = BackupSchedule.objects.filter(
+            organization=organization,
+            backup_job=job,
+        ).first()
+        if existing_schedule:
+            if not update_existing:
+                skipped_existing += 1
+                continue
+            existing_schedule.frequency = frequency
+            existing_schedule.weekdays = weekdays
+            existing_schedule.scheduled_time = scheduled_time
+            existing_schedule.timezone = timezone_name
+            existing_schedule.report_deadline_time = report_deadline_time
+            existing_schedule.report_deadline_offset_days = report_deadline_offset_days
+            existing_schedule.mode = mode
+            if "Updated provisional schedule" not in existing_schedule.notes:
+                existing_schedule.notes = (
+                    (existing_schedule.notes + "\n") if existing_schedule.notes else ""
+                ) + "Updated provisional schedule from legacy bootstrap; requires review."
+            existing_schedule.save(
+                update_fields=[
+                    "frequency",
+                    "weekdays",
+                    "scheduled_time",
+                    "timezone",
+                    "report_deadline_time",
+                    "report_deadline_offset_days",
+                    "mode",
+                    "notes",
+                    "updated_at",
+                ]
+            )
+            updated_existing += 1
+            continue
+        BackupSchedule.objects.create(
+            organization=organization,
+            backup_job=job,
+            frequency=frequency,
+            weekdays=weekdays,
+            scheduled_time=scheduled_time,
+            timezone=timezone_name,
+            report_deadline_time=report_deadline_time,
+            report_deadline_offset_days=report_deadline_offset_days,
+            mode=mode,
+            notes="Provisional schedule from legacy bootstrap; requires review.",
+        )
+        created += 1
+    return LegacyScheduleBootstrapResult(
+        considered=considered,
+        created=created,
+        updated_existing=updated_existing,
+        skipped_existing=skipped_existing,
+    )

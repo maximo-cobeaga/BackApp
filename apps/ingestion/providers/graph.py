@@ -54,6 +54,8 @@ class MicrosoftGraphMailboxProvider:
             }
         )
         url = f"{GRAPH_ROOT}/users/{urllib.parse.quote(mailbox)}/mailFolders/{folder}/messages?{params}"
+        # Read-only contract: fetch messages with GET only. Do not mark read,
+        # move messages, edit folders, or touch mailbox rules.
         payload = self._get_json(url, token)
         return [self._message_from_graph(item) for item in payload.get("value", [])]
 

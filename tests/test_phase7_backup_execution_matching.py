@@ -6,6 +6,7 @@ from django.urls import reverse
 
 from apps.backups.models import BackupJob, BackupSchedule, BackupTechnology
 from apps.customers.models import ManagedCustomer, Site
+from apps.imports.models import ImportBatch, LegacyBackupConfiguration
 from apps.ingestion.models import InboundMessage, MailConnector
 from apps.operations.models import BackupExecution, ExpectedExecution
 from apps.operations.services import (
@@ -182,6 +183,44 @@ class PhaseSevenBackupExecutionMatchingTest(TestCase):
         assert "Coincide la tarea detectada" in candidates[0].reasons
         assert "Coincide la tecnología detectada" in candidates[0].reasons
         assert "El correo llegó dentro de la ventana esperada" in candidates[0].reasons
+
+    def test_matching_candidates_use_legacy_bootstrap_evidence(self):
+        batch = ImportBatch.objects.create(
+            organization=self.org,
+            original_filename="legacy.csv",
+            source_sha256="a" * 64,
+        )
+        LegacyBackupConfiguration.objects.create(
+            organization=self.org,
+            import_batch=batch,
+            managed_customer=self.customer,
+            source_sha256="a" * 64,
+            source_row=9,
+            legacy_fingerprint="b" * 64,
+            legacy_customer_name=self.customer.name,
+            legacy_site_label=self.site.name,
+            source_asset_label="YA01V",
+            legacy_backup_name="SQL Produccion",
+            legacy_method="Veeam Backup",
+            provider="VEEAM",
+            reconciled_site=self.site,
+            reconciled_backup_job=self.job,
+        )
+        self.item.customer_hints = [self.customer.name]
+        self.item.object_hints = ["YA01V"]
+        self.item.job_hints = ["SQL Produccion"]
+        self.item.metrics = {"provider": "VEEAM"}
+        self.item.save(
+            update_fields=["customer_hints", "object_hints", "job_hints", "metrics", "updated_at"]
+        )
+
+        candidates = backup_execution_candidates_for_parsed_item(parsed_item=self.item)
+
+        assert candidates[0].expected_execution == self.expected
+        assert candidates[0].confidence == 1.0
+        assert "Coincide una configuración histórica reconciliada" in candidates[0].reasons
+        assert "Coincide el objeto protegido o activo histórico" in candidates[0].reasons
+        assert "Coincide el cliente detectado" in candidates[0].reasons
 
     def test_review_form_prefills_single_strong_matching_candidate(self):
         self.item.job_hints = [self.job.name]

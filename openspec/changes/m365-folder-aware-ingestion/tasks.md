@@ -19,7 +19,8 @@
 - [ ] Add import fields for schedule/deadline mapping if approved.
 - [ ] Create or match `BackupSchedule` records during import confirmation.
 - [ ] Add tests for imported schedules and expected execution generation.
-- [ ] Add provider tests for custom folder IDs and read-only sync.
+- [x] Add provider tests for Graph read-only message fetch.
+- [ ] Add provider tests for custom folder IDs.
 - [ ] Improve Graph errors for folder-not-found or permission failures.
 
 ## Phase 4: optional next slice
@@ -28,4 +29,5 @@
 - [ ] Traverse child folders for customer/site/type paths.
 - [ ] Add UI to map discovered folders to imported entities.
 - [ ] Store source folder ID/path on inbound messages.
+- [x] Use imported legacy configuration evidence in matching explanations.
 - [ ] Use folder metadata in matching explanations.

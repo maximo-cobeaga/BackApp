@@ -14,4 +14,5 @@ runtime/staticfiles/
 runtime/attachments/
 runtime/exports/
 runtime/backups/
+runtime/reports/
 .env

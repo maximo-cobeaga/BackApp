@@ -12,7 +12,11 @@
     </p>
   </div>
   <div class="actions">
-    <a class="button" href="{% url 'expected_execution_generate' %}">Generar esperadas</a>
+    <form method="post" action="{% url 'expected_execution_generate' %}">
+      {% csrf_token %}
+      <input type="hidden" name="service_date" value="{{ selected_date|date:'Y-m-d' }}">
+      <button type="submit">Generar esperadas para esta fecha</button>
+    </form>
     <form method="post" action="{% url 'expected_execution_mark_missing' %}">
       {% csrf_token %}
       <button class="secondary" type="submit">Marcar vencidas sin reporte</button>

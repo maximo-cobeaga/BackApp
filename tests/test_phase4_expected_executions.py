@@ -168,6 +168,15 @@ class PhaseFourExpectedExecutionTest(TestCase):
             service_date=date(2026, 7, 20),
         ).exists()
 
+    def test_expected_execution_list_generates_selected_date_inline(self):
+        response = self.client.get(
+            reverse("expected_execution_list"),
+            {"date": "2026-07-20"},
+        )
+        content = response.content.decode()
+        assert "Generar esperadas para esta fecha" in content
+        assert 'name="service_date" value="2026-07-20"' in content
+
     def test_dashboard_metrics_include_expected_and_manual_counts(self):
         execution = generate_expected_executions(
             organization=self.org,

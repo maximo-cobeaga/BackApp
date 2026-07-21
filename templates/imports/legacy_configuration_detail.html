@@ -1,0 +1,107 @@
+{% extends "base.html" %}
+{% block title %}Detalle legacy{% endblock %}
+{% block page_title %}Detalle legacy{% endblock %}
+{% block content %}
+<p><a href="{% url 'legacy_import_configuration_list' %}">← Volver a configuraciones</a></p>
+<h1>{{ configuration.legacy_customer_name }} · {{ configuration.legacy_backup_name }}</h1>
+<p>Fila {{ configuration.source_row }} del CSV histórico. Esta vista es sólo de revisión.</p>
+
+<section class="panel">
+  <h2>Configuración</h2>
+  <dl>
+    <dt>Cliente</dt><dd>{{ configuration.legacy_customer_name }}</dd>
+    <dt>Sede legacy</dt><dd>{{ configuration.legacy_site_label|default:"—" }}</dd>
+    <dt>Origen</dt><dd>{{ configuration.source_asset_label|default:"—" }}</dd>
+    <dt>Backup</dt><dd>{{ configuration.legacy_backup_name|default:"—" }}</dd>
+    <dt>Método</dt><dd>{{ configuration.legacy_method|default:"—" }}</dd>
+    <dt>Proveedor sugerido</dt><dd>{{ configuration.provider|default:"Sin sugerencia" }}</dd>
+    <dt>Revisión proveedor</dt>
+    <dd>{% if configuration.provider_requires_confirmation %}Requiere confirmación{% else %}—{% endif %}</dd>
+    <dt>Responsable externo</dt><dd>{{ configuration.external_responsible|default:"—" }}</dd>
+  </dl>
+</section>
+
+<section class="panel">
+  <h2>Reconciliación operativa</h2>
+  {% if configuration.reconciled_backup_job %}
+    <p>
+      Reconciliada con la tarea
+      <strong>{{ configuration.reconciled_backup_job.name }}</strong>
+      el {{ configuration.reconciled_at }}.
+    </p>
+  {% else %}
+    <p>
+      Confirmá estos valores para crear o vincular entidades operativas. No se
+      crean programaciones ni ejecuciones esperadas en este paso.
+    </p>
+    <form method="post">
+      {% csrf_token %}
+      {{ reconcile_form.as_p }}
+      <button type="submit">Reconciliar configuración</button>
+    </form>
+  {% endif %}
+</section>
+
+<section class="panel">
+  <h2>Estados de esta configuración</h2>
+  <table>
+    <thead><tr><th>Estado</th><th>Total</th></tr></thead>
+    <tbody>
+      {% for row in status_counts %}
+        <tr><td>{{ row.normalized_status }}</td><td>{{ row.total }}</td></tr>
+      {% empty %}
+        <tr><td colspan="2">No hay registros para esta configuración.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</section>
+
+<section class="panel">
+  <h2>Issues</h2>
+  <table>
+    <thead><tr><th>Fecha</th><th>Código</th><th>Severidad</th><th>Detalle</th></tr></thead>
+    <tbody>
+      {% for issue in issues %}
+        <tr>
+          <td>{{ issue.source_date|default:"—" }}</td>
+          <td>{{ issue.issue_code }}</td>
+          <td>{{ issue.severity }}</td>
+          <td>{{ issue.details }}</td>
+        </tr>
+      {% empty %}
+        <tr><td colspan="4">No hay issues para esta configuración.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</section>
+
+<section class="panel">
+  <h2>Registros diarios</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>Fecha</th>
+        <th>Estado crudo</th>
+        <th>Estado normalizado</th>
+        <th>Responsable</th>
+        <th>Ticket</th>
+        <th>Observación</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for record in records %}
+        <tr>
+          <td>{{ record.source_date }}</td>
+          <td>{{ record.raw_status }}</td>
+          <td>{{ record.normalized_status }}</td>
+          <td>{{ record.raw_responsible }}</td>
+          <td>{{ record.raw_ticket }}</td>
+          <td>{{ record.raw_observation|truncatechars:120 }}</td>
+        </tr>
+      {% empty %}
+        <tr><td colspan="6">No hay registros diarios para esta configuración.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</section>
+{% endblock %}

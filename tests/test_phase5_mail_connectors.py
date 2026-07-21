@@ -204,6 +204,22 @@ class PhaseFiveMailConnectorTest(TestCase):
             with self.assertRaises(ProviderConfigurationError):
                 provider.fetch_recent(connector=self.connector)
 
+    def test_graph_message_read_uses_get_without_mailbox_mutation(self):
+        provider = MicrosoftGraphMailboxProvider()
+        captured_methods = []
+
+        def fake_open_json(request):
+            captured_methods.append(request.get_method())
+            return {"value": []}
+
+        provider._open_json = fake_open_json
+        provider._get_json(
+            "https://graph.microsoft.com/v1.0/users/backups@example.com/messages",
+            "token",
+        )
+
+        assert captured_methods == ["GET"]
+
     def test_graph_provider_maps_message_payload(self):
         provider = MicrosoftGraphMailboxProvider()
         item = {

@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% block title %}Histórico importado{% endblock %}
+{% block page_title %}Histórico importado{% endblock %}
+{% block content %}
+<h1>Histórico importado</h1>
+<p>Vista de revisión del CSV histórico. Estos datos son evidencia importada, no ejecuciones esperadas futuras.</p>
+
+<div class="metric-grid">
+  <article class="metric-card"><span>Batches</span><strong>{{ metrics.batches }}</strong></article>
+  <article class="metric-card"><span>Configuraciones legacy</span><strong>{{ metrics.configurations }}</strong></article>
+  <article class="metric-card"><span>Registros diarios</span><strong>{{ metrics.daily_records }}</strong></article>
+  <article class="metric-card"><span>Issues</span><strong>{{ metrics.issues }}</strong></article>
+  <article class="metric-card"><span>Tickets</span><strong>{{ metrics.tickets }}</strong></article>
+</div>
+
+<nav class="action-row" aria-label="Revisión legacy">
+  <a class="button" href="{% url 'legacy_import_configuration_list' %}">Ver configuraciones</a>
+  <a class="button secondary" href="{% url 'legacy_import_daily_record_list' %}">Ver registros diarios</a>
+  <a class="button secondary" href="{% url 'legacy_import_issue_list' %}">Ver issues</a>
+</nav>
+
+{% if latest_batch %}
+<section class="panel">
+  <h2>Último batch</h2>
+  <dl>
+    <dt>Archivo</dt><dd>{{ latest_batch.original_filename }}</dd>
+    <dt>SHA-256</dt><dd>{{ latest_batch.source_sha256 }}</dd>
+    <dt>Fecha</dt><dd>{{ latest_batch.created_at }}</dd>
+  </dl>
+</section>
+{% endif %}
+
+<section class="panel">
+  <h2>Estados normalizados</h2>
+  <table>
+    <thead><tr><th>Estado</th><th>Total</th></tr></thead>
+    <tbody>
+      {% for row in status_counts %}
+        <tr><td>{{ row.normalized_status }}</td><td>{{ row.total }}</td></tr>
+      {% empty %}
+        <tr><td colspan="2">No hay registros diarios importados.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</section>
+{% endblock %}
