@@ -530,6 +530,32 @@ The importer must:
 - Record an `ImportBatch` and per-row result.
 - Allow a safe rollback of the import batch.
 
+### 14.1 Legacy daily-control CSV import
+
+The historical file `Gestion de Backups 2026(Control Backups).csv` is a wide
+matrix, not a normalized table.
+
+Use the dedicated legacy import contract in:
+
+```text
+docs/operations/legacy-backup-history-import.md
+openspec/changes/legacy-backup-history-import/
+```
+
+Core rules:
+
+- Read the file with explicit encoding and delimiter.
+- Treat the first eight columns as backup configuration fields.
+- Treat each following four-column block as one day.
+- Preserve raw daily status, responsible, ticket, and observation values.
+- Normalize status only through the approved mapping table.
+- Create historical executions only for success, warning, and error statuses.
+- Keep `N/A`, placeholders, unknown values, and blanks as legacy evidence.
+- Never convert blanks into `NO_REPORT`.
+- Never infer lost Excel colors from CSV.
+- Never create tickets, send emails, or create users during import.
+- Treat schedule hints as legacy inference requiring confirmation.
+
 ## 15. Inbound report pipeline
 
 The future ingestion flow is:

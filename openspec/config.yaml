@@ -1,0 +1,19 @@
+project: backup-control-center
+artifact_store: both
+execution_mode: interactive
+chained_pr_strategy: auto-forecast
+review_budget_lines: 600
+language:
+  conversation: es-AR
+  technical_artifacts: en
+strict_tdd:
+  enabled: true
+  test_command: ".venv/Scripts/python.exe -m pytest -q"
+validation_commands:
+  - ".venv/Scripts/python.exe manage.py check"
+  - ".venv/Scripts/python.exe manage.py makemigrations --check --dry-run"
+  - ".venv/Scripts/python.exe -m pytest -q"
+  - "npx --yes markdownlint-cli2 README.md docs/**/*.md BACKUP_CONTROL_CENTER_MASTER_PROMPT.md"
+notes:
+  - "Microsoft 365 reports arrive in backups@dominio... and are routed to corresponding folders."
+  - "Secrets must stay outside the repository and database; connectors store environment-variable names only."
